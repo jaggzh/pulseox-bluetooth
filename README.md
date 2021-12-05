@@ -4,16 +4,16 @@ See comments at top of code.
 
 ## Screenshots
 
-Default text output (with the alert ranges set low to force it).\
+Default text output (with the alert ranges set low to force it).
 
-![Text console display](img/text-output.png)\
+![Text console display](img/text-output.png)
 
 It's unlikely you have this LCD project set up. It's a separate
 ESP8266 WiFi project I use for notices in our livingroom, and
 this project can display the BPM/SpO2 on it. *This project does not
-currently display this graphics image*\
+currently display this graphics image*
 
-![External (extra) LCD Display, if Available)](img/lcd-display.jpg)\
+![External (extra) LCD Display, if Available)](img/lcd-display.jpg)
 
 [https://github.com/jaggzh/esp8266-wifi-lcd-touch](https://github.com/jaggzh/esp8266-wifi-lcd-touch)
 
