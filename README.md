@@ -5,9 +5,11 @@ See comments at top of code.
 ## Screenshots
 
 ![Text console display](img/text-output.png)
+
 Default text output (with the alert ranges set low to force it).
 
 ![External (extra) LCD Display, if Available)](img/lcd-display.jpg)
+
 It's unlikely you have this LCD project set up It's a separate
 ESP8266 WiFi project I use for notices in our livingroom, and
 this project can display the BPM/SpO2 on it.
