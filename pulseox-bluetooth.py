@@ -4,7 +4,7 @@
 # Copyright: GPL 3.0 https://www.gnu.org/licenses/gpl-3.0.en.html
 
 # Inspired by:
-# https://github.com/bmidgley/vitals
+# https://anaesthetics.app/blog/posts/2020/bluetooth/
 
 # Currently this only handles the data sent by this PulseOx
 # Wellue Fingertip Pulse Oximeter, Blood Oxygen Saturation Monitor
