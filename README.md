@@ -20,7 +20,7 @@ currently display this graphics image*
 ## Usage
 
 1. Copy settings-sample.py to settings.py and edit
-1. Get a compatible pulseox (see settings for URL of the only bluetooth one I have, so my data format/parsing is probably specific to it).
+1. Get a compatible pulseox. It's programmed, currently, to support the data coming from a **"Wellue Fingertip Pulse Oximeter, Blood Oxygen Saturation Monitor with Batteries for Wellness Use Bluetooth, Black"** [https://www.amazon.com/gp/product/B087Q724QM/](https://www.amazon.com/gp/product/B087Q724QM/).  (I have no relation to them.)
 1. Set MAC address to the pulseox (see settings file)
 1. `pip install bluepy pysine`
 1. Run ./pulseox-bluetooth.py
