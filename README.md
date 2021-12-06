@@ -2,8 +2,10 @@
 
 ![PulseOx to PC](img/pc-checkmark.png)
 
-Currently this is Linux-only, as it's using "bluepy" for
-Bluetooth LE (low-energy devices), which is Linux only.
+Currently this possibly only runs in Linux, as its main
+dependency, '[https://github.com/IanHarvey/bluepy](bluepy)', seems to be Linux-only.
+(bluepy is for Bluetooth LE (low-energy devices)).
+
 
 ## Screenshots
 
