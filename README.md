@@ -3,7 +3,7 @@
 ![PulseOx to PC](img/pc-checkmark.png)
 
 Currently this possibly only runs in Linux, as its main
-dependency, '[https://github.com/IanHarvey/bluepy](bluepy)', seems to be Linux-only.
+dependency, '[bluepy](https://github.com/IanHarvey/bluepy)', seems to be Linux-only.
 (bluepy is for Bluetooth LE (low-energy devices)).
 
 
