@@ -3,6 +3,9 @@
 #      Date: 2021-12-04
 # Copyright: GPL 3.0 https://www.gnu.org/licenses/gpl-3.0.en.html
 
+# Inspired by:
+# https://anaesthetics.app/blog/posts/2020/bluetooth/
+
 # Currently this only handles the data sent by this PulseOx
 # Wellue Fingertip Pulse Oximeter, Blood Oxygen Saturation Monitor
 #  with Batteries for Wellness Use Bluetooth, Black 
@@ -69,12 +72,6 @@ if do_plot:
 last_webupd_time=0
 if settings.do_web_lcd:
     import requests
-
-# Inspired by: BLE IoT Sensor Demo
-# Author: Gary Stafford
-# Reference: https://elinux.org/RPi_Bluetooth_LE
-# Requirements: python3 -m pip install --user -r requirements.txt
-# To Run: python3 ./rasppi_ble_receiver.py d1:aa:89:0c:ee:82 <- MAC address - change me!
 
 import sys # for exit()
 
