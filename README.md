@@ -1,4 +1,4 @@
-## Monitor a Bluetooth PulseOx's Data from Linux
+## Monitor a Bluetooth PulseOx's Data from PC (Python code)
 
 ![PulseOx to PC](img/pc-checkmark.png)
 
