@@ -2,7 +2,8 @@
 
 ![PulseOx to PC](img/pc-checkmark.png)
 
-See comments at top of code.
+Currently this is Linux-only, as it's using "bluepy" for
+Bluetooth LE (low-energy devices), which is Linux only.
 
 ## Screenshots
 
