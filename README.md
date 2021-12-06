@@ -1,5 +1,7 @@
 ## Monitor a Bluetooth PulseOx's Data from Linux
 
+![PulseOx to PC](img/pc-checkmark.png)
+
 See comments at top of code.
 
 ## Screenshots
@@ -10,8 +12,10 @@ Default text output (with the alert ranges set low to force it).
 
 It's unlikely you have this LCD project set up. It's a separate
 ESP8266 WiFi project I use for notices in our livingroom, and
-this project can display the BPM/SpO2 on it. *This project does not
-currently display this graphics image*
+this project can display the BPM/SpO2 on it. *The nature image
+is I displayed on our own LCD. The project doesn't do that --
+it displays the console-text and can connect to that WiFi
+LCD project to display the BPM+SpO2 values in this image.*
 
 ![External (extra) LCD Display, if Available)](img/lcd-display.jpg)
 
