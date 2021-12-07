@@ -68,7 +68,7 @@ if do_plot:
 
 last_webupd_time=0
 if settings.do_web_lcd:
-    import requests
+    import remotedisplay as display
 
 # Inspired by: BLE IoT Sensor Demo
 # Author: Gary Stafford
@@ -180,10 +180,9 @@ class MyDelegate(btle.DefaultDelegate):
                     print("  DISCONNECTED!")
                 else:
                     if settings.do_web_lcd and time.time() - last_webupd_time > 5:
-                        print("  (updating web)")
-                        # Displays a colored box/strip with the values in it
-                        print(f"http://{settings.ip_lcd}/cs?col=r=35&frect=4,47,312,83,1&tfg=r=100,g=255,b=255&txt=x=10,y=10,s=5,t=%0a++BPM&tfg=r=255,g=95,b=95&txt=t=+{bpm}&tfg=r=100,g=255,b=255&txt=t=%0a+SpO2+&tfg=r=150,g=255,b=255&txt=t={spo2}")
-                        r = requests.get(f"http://{settings.ip_lcd}/cs?col=r=35&frect=4,47,312,83,1&tfg=r=100,g=255,b=255&txt=x=10,y=10,s=5,t=%0a++BPM&tfg=r=255,g=95,b=95&txt=t=+{bpm}&tfg=r=100,g=255,b=255&txt=t=%0a+SpO2+&tfg=r=150,g=255,b=255&txt=t={spo2}")
+                        display.display(ip=settings.ip_lcd, 
+                                        bpm=bpm,
+                                        spo2=spo2)
                         last_webupd_time = time.time()
         elif ints[0] == 254 and ints[1] == 8:
             if len(ints) < 8: 
