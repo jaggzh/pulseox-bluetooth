@@ -14,6 +14,7 @@
 #import playsound  # Not using right now
 import pysine      # Used for playing an alert tone
 import settings
+from bansi import * # Yes, that's right, *. Free colors everywhere!
 #pysine.sine(frequency=440.0, duration=1.0)
 
 ######################################################################3
@@ -27,15 +28,18 @@ alert_on_disconnect=False
 # bpm and o2 alert limits and time average length
 # (At present the plan is: If the avg over this time of data samples
 #  exceeds the limits, alert)
-bpm_low=50
+bpm_low=52
 bpm_high=93  # 4 testing
 bpm_high=120
+o2_low=92
 bpm_alert_sustained_secs=5  # samples averaged over this seconds
 alert_bpm_delay_secs=15     # Delay between alarms
 last_alert_bpm=0            # don't change. tracks time.
 
 o2_low=96    # 4 testing
-o2_low=91
+o2_low=97
+o2_low=93
+o2_low=92
 o2_alert_sustained_secs=5
 alert_o2_delay_secs=15      # Delay between alarms
 last_alert_o2=0             # don't change. tracks time.
@@ -71,7 +75,7 @@ if do_plot:
 
 last_webupd_time=0
 if settings.do_web_lcd:
-    import requests
+    import remotedisplay as display
 
 import sys # for exit()
 
@@ -119,35 +123,41 @@ def avg_log(log=None, dur=None):
 
 def alert_bpm(avg):
     global last_alert_bpm
-    print("WARNING. BPM out of range!!!", avg)
+    pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound
     #playsound.playsound('sample.mp3')
     if time.time()-last_alert_bpm > alert_bpm_delay_secs:
-        pysine.sine(frequency=440.0, duration=1.0)
+        if settings.alert_audio:
+            pysine.sine(frequency=440.0, duration=1.0)
         last_alert_bpm=time.time()
 
 def alert_o2(avg):
     global last_alert_o2
-    print("WARNING. SpO2 out of range!!!", avg)
+    pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
     if time.time()-last_alert_o2 > alert_o2_delay_secs:
-        pysine.sine(frequency=540.0, duration=1.0)
+        if settings.alert_audio:
+            pysine.sine(frequency=540.0, duration=1.0)
         last_alert_o2=time.time()
 
 def handle_alerts():
+    ret_alert = None  # Return: None, 'bpm', 'spo2'
     if len(bpm_log) < 5: return  # Need more data.
 
     if not alert_on_disconnect:  # User does not desire disconnection alerts
         if bpm_log[-1] == 255 and o2_log[-1] == 127:
-            return
+            return None
     bpm_avg = avg_log(log=bpm_log, dur=bpm_alert_sustained_secs)
     o2_avg = avg_log(log=o2_log, dur=o2_alert_sustained_secs)
     if args.verbose > 0:
         print("  BPM avg:", bpm_avg)
         print("   O2 avg:", o2_avg)
-    if bpm_avg > bpm_high or bpm_avg < bpm_low:
+    if bpm_avg >= bpm_high or bpm_avg <= bpm_low:
         alert_bpm(bpm_avg)
-    elif o2_avg < o2_low:
+        ret_alert = 'bpm'
+    elif o2_avg <= o2_low:
         alert_o2(o2_avg)
+        ret_alert = 'spo2'
+    return ret_alert
 
 class MyDelegate(btle.DefaultDelegate):
     def __init__(self):
@@ -171,16 +181,16 @@ class MyDelegate(btle.DefaultDelegate):
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
-                handle_alerts()
+                alert_type = handle_alerts() # None, 'bpm', 'spo2'
                 print(f"BPM: {bpm}  SpO2: {spo2}")
                 if bpm == 255 and spo2 == 127:
                     print("  DISCONNECTED!")
                 else:
                     if settings.do_web_lcd and time.time() - last_webupd_time > 5:
-                        print("  (updating web)")
-                        # Displays a colored box/strip with the values in it
-                        print(f"http://{settings.ip_lcd}/cs?col=r=35&frect=4,47,312,83,1&tfg=r=100,g=255,b=255&txt=x=10,y=10,s=5,t=%0a++BPM&tfg=r=255,g=95,b=95&txt=t=+{bpm}&tfg=r=100,g=255,b=255&txt=t=%0a+SpO2+&tfg=r=150,g=255,b=255&txt=t={spo2}")
-                        r = requests.get(f"http://{settings.ip_lcd}/cs?col=r=35&frect=4,47,312,83,1&tfg=r=100,g=255,b=255&txt=x=10,y=10,s=5,t=%0a++BPM&tfg=r=255,g=95,b=95&txt=t=+{bpm}&tfg=r=100,g=255,b=255&txt=t=%0a+SpO2+&tfg=r=150,g=255,b=255&txt=t={spo2}")
+                        display.display(ip=settings.ip_lcd, 
+                                        bpm=bpm,
+                                        spo2=spo2,
+                                        alert=alert_type)
                         last_webupd_time = time.time()
         elif ints[0] == 254 and ints[1] == 8:
             if len(ints) < 8: 
@@ -266,6 +276,10 @@ def main():
     global bt_last_connect_try
     global args
     global final_mac
+
+    # Clear the screen probably
+    if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
+
     args = get_args()
     final_mac = args.mac_address
     print("Using bluetooth device MAC address:", final_mac)
@@ -279,9 +293,9 @@ def main():
             btdev.waitForNotifications(1.0)
         #except BTLEDisconnectedError as e:
         except Exception as e:
-            if type(e) is btle.BTLEDisconnectError:
-                print("We disconnected.  Ignoring it. Not sure what will happen now")
-            else:
+            # if type(e) is btle.BTLEDisconnectError:
+            #     print("We disconnected.  Ignoring it. Not sure what will happen now")
+            # else:
                 #sys.exit()
                 if time.time() - bt_last_connect_try > bt_reconnect_delay:
                     print("Unknown error (it's not BTLEDisconnectError). Re-connecting:")
