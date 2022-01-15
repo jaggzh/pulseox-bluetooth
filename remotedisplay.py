@@ -4,6 +4,8 @@ import ipdb
 import sys
 from bansi import * # Yes, that's right, *. Free colors everywhere!
 
+initial_clear_done=False
+
 boxw=312
 boxh=79
 boxx=4
@@ -15,6 +17,7 @@ tx=10
 ty=10
 tsize=12
 last_alert=False
+last_pulseox_strlen=-1
 
 tsize0_xadv=6  # Default Adafruit GFX fixed-width font size 0 glyph pixel width
 tsize0_yadv=8
@@ -80,13 +83,18 @@ def init(ip=None, error=False):
 	#    ip: IP address of LCD display
 	# error: default False: don't crash if the request fails
 	#                 True: crash on web failure (raise exception)
-    # Just clears the screen
-	try:
-		s = f"http://{ip}/cs?cls=r=0"
-		r = requests.get(s)
-	except:
-		if error: raise
-		pass
+    # Used to clears the screen, but now it doesn't
+    pass
+
+def initital_clear():
+	if not initial_clear_done:
+		try:
+			s = f"http://{ip}/cs?cls=r=0"
+			r = requests.get(s)
+		except:
+			if error: raise
+			pass
+		initial_clear_done = True
 
 def display(
 		ip=None,
@@ -94,28 +102,36 @@ def display(
 		spo2=None,
 		verbose=0,
 		alert=False):  # None, 'bpm', 'spo2'
-	lenstr=bpm + spo2
+	global last_alert, last_pulseox_strlen
+	lenstr_s=str(bpm) + str(spo2)
+	lenstr = len(lenstr_s)
 	ltsize=tsize
 	space=''
 	clear=False
 	alert_border=False
-	global last_alert
-	print(bgre, "Last alert:", last_alert, rst)
+	double_line=False
+	#print(bgre, "Last alert:", last_alert, rst)
+	#print(yel, f"Str len: {lenstr}, str: {lenstr_s}", rst)
+	#print(f"{yel}BPM: {bred}{bpm}{yel}, SpO2: {bcya}{spo2){rst}")
 
 	# Adjust fonts/layout for length and alert-status
+	if last_pulseox_strlen != lenstr:
+		clear=True
+	if lenstr > 4:
+		double_line=True
 	if alert is not None:  # ALERT is TRUE (not True-true, but some string value)
 		print("Sending alert display!");
-		space='%0A'
+		double_line=True
 		ltsize += 1
 		if not last_alert: clear = True
 		last_alert = True
 		alert_border = True
 	else:
-		if lenstr < 5: space='+'
-		elif lenstr > 5: ltsize -= 1
-		space='%0A'
+		ltsize -= 1
 		if last_alert: clear = True
 		last_alert = False
+	if double_line:
+		space='%0A'
 
 	if verbose>0: print("  (updating web)")
 	# Displays a colored box/strip with the values in it
@@ -133,10 +149,10 @@ def display(
 			bgcolor='r=100',
 			padx=2, pady=1,
 		)
-	if alert is None:
-		curx += bw
-	else:
-		cury += bh
+
+	if not double_line: curx += bw
+	else: cury += bh
+
 	textbox_o2, bw, bh = textbox(
 			size = ltsize,
 			txt = f"{spo2}",
@@ -166,6 +182,10 @@ def display(
 			textbox_bpm + "&" + textbox_o2;
 	if verbose>1: print("Request:", s)
 	r = requests.get(s)
+
+	last_pulseox_strlen = lenstr
+	# last_alert = <-- we record the last alert, above
+
 	# sys.exit()
 	# s = f"http://{ip}/cs?" + \
 	# 	f"col={boxcol}&frect={boxx},{boxy},{boxw},{boxh},{boxrad}&" + \

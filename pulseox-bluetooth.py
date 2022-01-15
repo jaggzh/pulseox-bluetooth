@@ -25,20 +25,17 @@ alert_on_disconnect=False
 # bpm and o2 alert limits and time average length
 # (At present the plan is: If the avg over this time of data samples
 #  exceeds the limits, alert)
+bpm_alert_sustained_secs=5  # samples averaged over this seconds
+alert_bpm_delay_secs=5     # Delay between alarms
+last_alert_bpm=0            # don't change. tracks time.
+
 bpm_low=52
 bpm_high=93  # 4 testing
 bpm_high=120
-o2_low=92
-bpm_alert_sustained_secs=5  # samples averaged over this seconds
-alert_bpm_delay_secs=15     # Delay between alarms
-last_alert_bpm=0            # don't change. tracks time.
-
-o2_low=96    # 4 testing
-o2_low=97
-o2_low=93
-o2_low=92
+o2_low=97    # 4 testing
 o2_alert_sustained_secs=5
-alert_o2_delay_secs=15      # Delay between alarms
+o2_low=86
+alert_o2_delay_secs=5      # Delay between alarms
 last_alert_o2=0             # don't change. tracks time.
 # Internal logs
 bpm_log=[]  # []['time','val']
@@ -287,6 +284,7 @@ def main():
     final_mac = args.mac_address
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
+    if settings.do_web_lcd: initital_clear()
 
     prev=None
     i=0
