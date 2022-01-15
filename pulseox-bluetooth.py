@@ -284,7 +284,7 @@ def main():
     final_mac = args.mac_address
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
-    if settings.do_web_lcd: initital_clear()
+    if settings.do_web_lcd: display.initial_clear()
 
     prev=None
     i=0

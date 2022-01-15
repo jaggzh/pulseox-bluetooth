@@ -4,6 +4,7 @@ import ipdb
 import sys
 from bansi import * # Yes, that's right, *. Free colors everywhere!
 
+lcd_ip=None # Assigned at init()
 initial_clear_done=False
 
 boxw=312
@@ -80,16 +81,19 @@ def textbox(rad=0,
 # sys.exit()
 
 def init(ip=None, error=False):
+	global lcd_ip
+	lcd_ip=ip
 	#    ip: IP address of LCD display
 	# error: default False: don't crash if the request fails
 	#                 True: crash on web failure (raise exception)
-    # Used to clears the screen, but now it doesn't
-    pass
+	# Used to clears the screen, but now it doesn't
+	pass
 
-def initital_clear():
+def initial_clear():
+	global initial_clear_done
 	if not initial_clear_done:
 		try:
-			s = f"http://{ip}/cs?cls=r=0"
+			s = f"http://{lcd_ip}/cs?cls=r=0"
 			r = requests.get(s)
 		except:
 			if error: raise
