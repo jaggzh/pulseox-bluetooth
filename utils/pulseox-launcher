@@ -1,0 +1,24 @@
+#!/bin/bash
+# Launches the pulseox program
+#
+# I set a keyboard key to run this script, so family/caregivers/nurses
+# can launch it easily.
+#
+# It'll kill a running version of itself if it finds any.
+# *Note: It kills pretty much anything it finds with 'pulseox' in the
+#        command line!
+
+# To use:
+# 1. Set po_bin= the path of your pulseox-bluetooth.py
+# 2. Run this script, or map a shortcut to run it.
+
+po_bin=/location/of/pulseox-bluetooth/pulseox-bluetooth.py
+
+ps auxwf | grep [p]ulseox | sed -e 's/  */ /g' | cut -d' ' -f 2 |
+	while read pid; do
+		if [[ "$pid" != "$$" ]]; then
+			kill "$pid"
+		fi
+	done
+
+"$po_bin"  # Runs the pulseox-bluetooth.py script
