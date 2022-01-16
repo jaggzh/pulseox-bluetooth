@@ -10,6 +10,21 @@
 
 #import playsound  # Not using right now
 import pysine      # Used for playing an alert tone
+import sys
+
+# import time
+# from pysinewave import SineWave
+# sinewave = SineWave(pitch = 12, pitch_per_second = 10)
+# sinewave.play()
+# time.sleep(2)
+# sinewave.set_pitch(-5)
+# time.sleep(3)
+# import numpy as np
+# for i in np.arange(300, 600, 3):
+#     pysine.sine(frequency=i, duration=.05)
+# sys.exit()
+
+
 import settings
 from bansi import * # Yes, that's right, *. Free colors everywhere!
 #pysine.sine(frequency=440.0, duration=1.0)
@@ -19,24 +34,30 @@ from bansi import * # Yes, that's right, *. Free colors everywhere!
 
 #pomac='BA:03:C4:2C:4D:60'
 alert_bpm_audiofile=""               # not used; only using pysine.sine()
-alert_on_disconnect=True             # If sensor gives bpm=255, spo2=127
 alert_on_disconnect=False
+alert_on_disconnect=True             # If sensor gives bpm=255, spo2=127
 
 # bpm and o2 alert limits and time average length
 # (At present the plan is: If the avg over this time of data samples
 #  exceeds the limits, alert)
 bpm_alert_sustained_secs=5  # samples averaged over this seconds
-alert_bpm_delay_secs=5     # Delay between alarms
-last_alert_bpm=0            # don't change. tracks time.
+last_alert = {             # don't change. these track time.
+        'o2': 0,
+        'bpm': 0,
+        'disco': 0,
+        }
 
+alert_delay_secs = {
+        'o2': 5,
+        'bpm': 5,
+        'disco': 5,
+        }
 bpm_low=52
 bpm_high=93  # 4 testing
 bpm_high=120
 o2_low=97    # 4 testing
 o2_alert_sustained_secs=5
 o2_low=86
-alert_o2_delay_secs=5      # Delay between alarms
-last_alert_o2=0             # don't change. tracks time.
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
@@ -122,41 +143,50 @@ def avg_log(log=None, dur=None):
     return avg
 
 def alert_bpm(avg):
-    global last_alert_bpm
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound
     #playsound.playsound('sample.mp3')
-    if time.time()-last_alert_bpm > alert_bpm_delay_secs:
+    if time.time()-last_alert['bpm'] > alert_delay_secs['bpm']:
         if settings.alert_audio:
             pysine.sine(frequency=440.0, duration=1.0)
-        last_alert_bpm=time.time()
+        last_alert['bpm']=time.time()
 
 def alert_o2(avg):
-    global last_alert_o2
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
-    if time.time()-last_alert_o2 > alert_o2_delay_secs:
+    if time.time()-last_alert['o2'] > alert_delay_secs['o2']:
         if settings.alert_audio:
             pysine.sine(frequency=540.0, duration=1.0)
-        last_alert_o2=time.time()
+        last_alert['o2']=time.time()
+
+def alert_disco():
+    pfp(bmag, "WARNING. Disconnected", rst)
+    if time.time()-last_alert['disco'] > alert_delay_secs['disco']:
+        if settings.alert_audio:
+            pysine.sine(frequency=199.0, duration=1.0)
+        last_alert['disco']=time.time()
 
 def handle_alerts():
     ret_alert = None  # Return: None, 'bpm', 'spo2'
     if len(bpm_log) < 5: return  # Need more data.
 
-    if not alert_on_disconnect:  # User does not desire disconnection alerts
-        if bpm_log[-1] == 255 and o2_log[-1] == 127:
-            return None
-    bpm_avg = avg_log(log=bpm_log, dur=bpm_alert_sustained_secs)
-    o2_avg = avg_log(log=o2_log, dur=o2_alert_sustained_secs)
-    if args.verbose > 0:
-        print("  BPM avg:", bpm_avg)
-        print("   O2 avg:", o2_avg)
-    if bpm_avg >= bpm_high or bpm_avg <= bpm_low:
-        alert_bpm(bpm_avg)
-        ret_alert = 'bpm'
-    elif o2_avg <= o2_low:
-        alert_o2(o2_avg)
-        ret_alert = 'spo2'
+    # Disconnected
+    print(f"BPMlog: {bpm_log[-1]['val']}  SpO2: {o2_log[-1]['val']}")
+    if bpm_log[-1]['val'] == 255 and o2_log[-1]['val'] == 127:
+        if alert_on_disconnect:  # User does not desire disconnection alerts
+            alert_disco()
+        ret_alert = 'disco'
+    else:
+        bpm_avg = avg_log(log=bpm_log, dur=bpm_alert_sustained_secs)
+        o2_avg = avg_log(log=o2_log, dur=o2_alert_sustained_secs)
+        if args.verbose > 0:
+            print("  BPM avg:", bpm_avg)
+            print("   O2 avg:", o2_avg)
+        if bpm_avg >= bpm_high or bpm_avg <= bpm_low:
+            alert_bpm(bpm_avg)
+            ret_alert = 'bpm'
+        elif o2_avg <= o2_low:
+            alert_o2(o2_avg)
+            ret_alert = 'spo2'
     return ret_alert
 
 class MyDelegate(btle.DefaultDelegate):
@@ -181,9 +211,10 @@ class MyDelegate(btle.DefaultDelegate):
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
-                alert_type = handle_alerts() # None, 'bpm', 'spo2'
-                print(f"BPM: {bpm}  SpO2: {spo2}")
-                if bpm == 255 and spo2 == 127:
+                print(f"BPM   : {bpm}  SpO2: {spo2}")
+                alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
+                print(f"Alert type: {alert_type}")
+                if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
                     if settings.do_web_lcd and time.time() - last_webupd_time > 5:
@@ -284,7 +315,9 @@ def main():
     final_mac = args.mac_address
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
-    if settings.do_web_lcd: display.initial_clear()
+    if settings.do_web_lcd:
+        if args.clear:
+            display.initial_clear()
 
     prev=None
     i=0
@@ -351,6 +384,8 @@ def get_args():
         default=settings.pomac)
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
+    arg_parser.add_argument(
+        '-c', '--clear', help="Clear LCD at start", action='store_true')
     args = arg_parser.parse_args()
     return args
 
