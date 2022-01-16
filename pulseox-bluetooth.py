@@ -40,7 +40,11 @@ alert_on_disconnect=True             # If sensor gives bpm=255, spo2=127
 # bpm and o2 alert limits and time average length
 # (At present the plan is: If the avg over this time of data samples
 #  exceeds the limits, alert)
-bpm_alert_sustained_secs=5  # samples averaged over this seconds
+alert_avg_secs = {  # samples averaged over this seconds
+        'o2': 5,
+        'bpm': 5,
+        'disco': 5,
+        }
 last_alert = {             # don't change. these track time.
         'o2': 0,
         'bpm': 0,
@@ -56,15 +60,14 @@ bpm_low=52
 bpm_high=93  # 4 testing
 bpm_high=120
 o2_low=97    # 4 testing
-o2_alert_sustained_secs=5
 o2_low=86
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
-log_hours=6                 # Could be a lot of data points. We keep each sample
+log_hours=0                 # Could be a lot of data points. We keep each sample
                             #  currently.
 log_mins=log_hours*60
-log_secs=log_mins*60
+log_secs=log_mins*60 + 20
 
 # Internal, probably no reason to modify
 bt_reconnect_delay=2
@@ -124,22 +127,30 @@ def plot_setup():
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-def avg_log(log=None, dur=None):
+def avg_log(log=None, dur=None, prune=True):
     tot=0
-    lenny=len(log)-1
-    if lenny < 1: return 0
     ctime = time.time()
     count = 0
-    for i in range(lenny-1, -1, -1):
+    loglen=len(log)-1
+    for i in range(loglen-1, -1, -1):
         val = log[i]['val']
         tim = log[i]['time']
-        if ctime-tim > dur: break
+        if ctime-tim >= dur: break
         tot += val
         count += 1
-    if count < 1: return 0
+    if prune:
+        for i in range(i, -1, -1):
+            if ctime-tim >= log_secs:
+                log.pop(i)
+
+    if len(log) < 5:  # Not enough for averaging really.. I guess
+        return 0
+
     avg = tot / count
     if args.verbose > 1:
         print(f"Total {count} items: {tot}.  Avg: {avg}")
+    if avg == 0:
+        print(f"Average is 0: ", log)
     return avg
 
 def alert_bpm(avg):
@@ -167,17 +178,17 @@ def alert_disco():
 
 def handle_alerts():
     ret_alert = None  # Return: None, 'bpm', 'spo2'
-    if len(bpm_log) < 5: return  # Need more data.
+    if len(bpm_log) < 5: return None  # Need more data.
 
     # Disconnected
-    print(f"BPMlog: {bpm_log[-1]['val']}  SpO2: {o2_log[-1]['val']}")
+    #print(f"BPMlog: {bpm_log[-1]['val']}  SpO2: {o2_log[-1]['val']}")
     if bpm_log[-1]['val'] == 255 and o2_log[-1]['val'] == 127:
         if alert_on_disconnect:  # User does not desire disconnection alerts
             alert_disco()
         ret_alert = 'disco'
     else:
-        bpm_avg = avg_log(log=bpm_log, dur=bpm_alert_sustained_secs)
-        o2_avg = avg_log(log=o2_log, dur=o2_alert_sustained_secs)
+        bpm_avg = avg_log(log=bpm_log, dur=alert_avg_secs['bpm'])
+        o2_avg = avg_log(log=o2_log, dur=alert_avg_secs['o2'])
         if args.verbose > 0:
             print("  BPM avg:", bpm_avg)
             print("   O2 avg:", o2_avg)
@@ -213,7 +224,11 @@ class MyDelegate(btle.DefaultDelegate):
                 o2_log.append({'time': time.time(), 'val':spo2})
                 print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
-                print(f"Alert type: {alert_type}")
+                if alert_type is not None:
+                    print(f"Alert type: {alert_type}")
+                    print("Ints:", ints)
+                    print(" BPM Log:", bpm_log)
+                    print("  O2 Log:", o2_log)
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
@@ -337,7 +352,9 @@ def main():
                     bt_last_connect_try = time.time()
                     bt_connect()
                     print("Reconnected!")
-                    pass
+                else:
+                    print("Error caught:", e)
+                pass
                 # raise e
     while True:
         cur = "==============================================\n"

@@ -6,6 +6,7 @@ from bansi import * # Yes, that's right, *. Free colors everywhere!
 
 lcd_ip=None # Assigned at init()
 initial_clear_done=False
+verbose=0
 
 boxw=312
 boxh=79
@@ -45,21 +46,21 @@ def textbox(rad=0,
 	        ):
 	txt = txt.strip()
 	linecnt = txt.count('\n')+1
-	print("Line count:", linecnt)
+	if verbose>1: print("Line count:", linecnt)
 	maxlinelen = max([len(s) for s in txt.split('\n')])
-	print("Maxlinelen:", maxlinelen)
+	if verbose>1: print("Maxlinelen:", maxlinelen)
 	width = maxlinelen * tsize0_xadv * size
-	print("width:", width)
+	if verbose>1: print("width:", width)
 	height = linecnt * tsize0_yadv * size
-	print("height:", height)
+	if verbose>1: print("height:", height)
 	width  += padx*2 # - size  # Remove the glyph-spacing pixel from padding
-	print("width:", width)
+	if verbose>1: print("width:", width)
 	height += pady*2 # - size
-	print("height:", height)
+	if verbose>1: print("height:", height)
 	tx = x + padx
-	print("tx:", tx)
+	if verbose>1: print("tx:", tx)
 	ty = y + pady
-	print("ty:", ty)
+	if verbose>1: print("ty:", ty)
 	return f"col={bgcolor}&frect={x},{y},{width},{height},{rad}&" + \
 	       f"tfg={color}&" + \
 	       f"txt=s={size},x={tx},y={ty},t={text_escape(txt)}", \
@@ -166,8 +167,8 @@ def display(
 			bgcolor='r=0',
 			padx=2, pady=1,
 		)
-	print("Textbox cmd bpm:", textbox_bpm)
-	print("Textbox cmd  o2:", textbox_o2)
+	if verbose>0: print("Textbox cmd bpm:", textbox_bpm)
+	if verbose>0: print("Textbox cmd  o2:", textbox_o2)
 	if clear: clear_str = 'cls=r=0&'
 	else: clear_str = ''
 
