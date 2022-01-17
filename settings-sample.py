@@ -20,3 +20,5 @@ alert_audio=True
 
 # Data format/Model info should eventually be here, if others add
 # more models
+
+# vim: set et

@@ -2,7 +2,11 @@ import requests
 import settings
 import ipdb
 import sys
+import os
 from bansi import * # Yes, that's right, *. Free colors everywhere!
+
+try: import usercallbacks
+except: pass
 
 lcd_ip=None # Assigned at init()
 initial_clear_done=False
@@ -169,7 +173,8 @@ def display(
 		)
 	if verbose>0: print("Textbox cmd bpm:", textbox_bpm)
 	if verbose>0: print("Textbox cmd  o2:", textbox_o2)
-	if clear: clear_str = 'cls=r=0&'
+	if clear:
+		clear_str = 'cls=r=0&'
 	else: clear_str = ''
 
 	bwidth=30
@@ -185,8 +190,24 @@ def display(
 			clear_str + \
 			alert_border_str + \
 			textbox_bpm + "&" + textbox_o2;
+
+	################################################################
+	## Actual drawing calls done here
+	
+	# When not alerting, call an optional user-callback
+	# (I draw a heart on our LCD display)
+	if not alert_border:
+		try: usercallbacks.pre_display_normal()
+		except: pass
 	if verbose>1: print("Request:", s)
+	# Here is the actual web hit to the LCD
 	r = requests.get(s)
+	# When not alerting, call an optional user-callback
+	if not alert_border:
+		try: usercallbacks.post_display_normal()
+		except: pass
+	## / END of actual drawing calls
+	################################################################
 
 	last_pulseox_strlen = lenstr
 	# last_alert = <-- we record the last alert, above
@@ -201,4 +222,3 @@ def display(
 	# 	 f"txt=t={spo2}"
 	# if verbose>1: print(s)
 	# r = requests.get(s)
-

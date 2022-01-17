@@ -1,5 +1,9 @@
 scriptname=pulseox-bluetooth.py
-editfiles=Makefile $(scriptname) remotedisplay.py bansi.py settings.py settings-sample.py README.md
+editfiles=Makefile $(scriptname) \
+		  usercallbacks.py \
+		  usercallbacks-example.py \
+		  remotedisplay.py \
+		  bansi.py settings.py settings-sample.py README.md
 
 all:
 	@echo 'Commands:'

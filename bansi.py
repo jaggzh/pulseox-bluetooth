@@ -212,3 +212,4 @@ def pfpl(*x, **y):  # Print-flush, plain, line (no sep, no NL)
 	print(*x, **y)
 	sys.stdout.flush()
 
+# vim: set et
