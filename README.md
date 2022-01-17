@@ -1,7 +1,7 @@
 ## Monitor a Bluetooth PulseOx's Data from PC (Python code)
 
 ![Photo of LCD display (optional)](img/photo-of-lcd.png)
-Optionally, the python script can do something like I'm doing &endash;
+Optionally, the python script can do something like I'm doing &ndash;
 displaying on an LCD display instead of the computer.
 
 * Currently this possibly only runs in Linux, as its main
