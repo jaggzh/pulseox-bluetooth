@@ -2,9 +2,13 @@
 
 ![PulseOx to PC](img/pc-checkmark.png)
 
-Currently this possibly only runs in Linux, as its main
+* Currently this possibly only runs in Linux, as its main
 dependency, '[bluepy](https://github.com/IanHarvey/bluepy)', seems to be Linux-only.
 (bluepy is for Bluetooth LE (low-energy devices)).
+
+![Photo of LCD display (optional)](img/photo-of-lcd.png)
+
+* The current Bluetooth pulseox I'm using is: **"Wellue Fingertip Pulse Oximeter, Blood Oxygen Saturation Monitor with Batteries for Wellness Use Bluetooth, Black"** [https://www.amazon.com/gp/product/B087Q724QM/](https://www.amazon.com/gp/product/B087Q724QM/).  (I have no relation to them.)  The data is likely different for others so the handling of it must be customized if you get a different version.  ***Feel free to contact me for help.***
 
 
 ## Screenshots
