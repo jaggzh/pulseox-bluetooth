@@ -1,6 +1,7 @@
 ## Monitor a Bluetooth PulseOx's Data from PC (Python code)
 
-<img src='img/photo-of-lcd.png' width='60%'>
+<img src='img/photo-of-lcd.png' width='58%'><img src='img/lcd-pulseox.png' width='38%'>
+
 
 Optionally, the python script can do something like I'm doing &ndash;
 displaying on an LCD display instead of the computer.
