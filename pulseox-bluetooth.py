@@ -24,8 +24,8 @@ import sys
 #     pysine.sine(frequency=i, duration=.05)
 # sys.exit()
 
-
 import settings
+import flogging
 from bansi import * # Yes, that's right, *. Free colors everywhere!
 #pysine.sine(frequency=440.0, duration=1.0)
 
@@ -56,7 +56,7 @@ alert_delay_secs = {
         'bpm': 5,
         'disco': 5,
         }
-bpm_low=52
+bpm_low=49
 bpm_high=93  # 4 testing
 bpm_high=120
 o2_low=97    # 4 testing
@@ -77,7 +77,6 @@ bt_last_connect_try=0
 btdev=None
 final_mac=None
 args=None
-
 
 import sys
 import time
@@ -229,6 +228,7 @@ class MyDelegate(btle.DefaultDelegate):
                     print("Ints:", ints)
                     print(" BPM Log:", bpm_log)
                     print("  O2 Log:", o2_log)
+                flogging.handle_filelog(bpm=bpm, spo2=spo2, time=time.time(), alert=alert_type)
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
@@ -327,7 +327,10 @@ def main():
     if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
 
     args = get_args()
+    flogging.setup_log()
+
     final_mac = args.mac_address
+
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
     if settings.do_web_lcd:
@@ -374,6 +377,7 @@ def main():
                 except KeyboardInterrupt: sys.exit()
                 except:
                     # cur += f" Char[{common}] Handle: {char.valHandle}  Read: -\n"
+                    print("Some error caught in char.read()")
                     pass
         if prev is None:
             print(cur)

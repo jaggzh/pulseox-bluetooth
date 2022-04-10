@@ -112,6 +112,8 @@ def display(
 		verbose=0,
 		alert=False):  # None, 'bpm', 'spo2'
 	global last_alert, last_pulseox_strlen
+	#import os
+	#os.system(f"moztts 'Your heart rate is {bpm}'")
 	lenstr_s=str(bpm) + str(spo2)
 	lenstr = len(lenstr_s)
 	ltsize=tsize
@@ -206,6 +208,7 @@ def display(
 	if not alert_border:
 		try: usercallbacks.post_display_normal()
 		except: pass
+	#os.system("livmsg-txt-box-time");
 	## / END of actual drawing calls
 	################################################################
 
