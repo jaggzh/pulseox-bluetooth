@@ -6,6 +6,8 @@
 #                                    #  ('timeout 5' kills it after 5 seconds)
 #   bluetoothctl devices             # List'em
 pomac='BA:03:C4:FF:FF:FF'
+do_logging=True              # set logdir below
+do_logging=False             # set logdir below
 
 # For an extra WiFi LCD display
 # (project at: https://github.com/jaggzh/esp8266-wifi-lcd-touch )
@@ -17,6 +19,12 @@ lcd_h=240
 
 alert_audio=False            # Make a pysine noise when vitals out of range
 alert_audio=True
+
+
+## LOG Settings
+# logdir: Will be created, if it doesn't exist, with user-access only (0700)
+logdir='/home/me/logs/pulseox-john'
+logfreq=60                   # Seconds: Don't log each reading
 
 # Data format/Model info should eventually be here, if others add
 # more models
