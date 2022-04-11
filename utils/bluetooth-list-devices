@@ -1,0 +1,42 @@
+#!/bin/bash
+umask 0077
+da="/tmp/bt-find.a"  # Devs list A
+db="/tmp/bt-find.b"  # Devs list B
+uniqa="$da.uniq"
+uniqb="$db.uniq"
+
+scan=1
+
+if [[ -f "$da" && -f "$db" ]]; then
+	echo "Device files exist ($da $db)"
+	ans=
+	read -r -p "(U)se or (R)escan? (U/r): " ans
+	if [[ "$ans" = u ]]; then
+		scan=0
+	elif [[ "$ans" = r ]]; then
+		scan=1
+	else
+		echo
+		echo "I don't know what \"$ans\" is, sorry. Quitting."
+		exit
+	fi
+fi
+
+if [[ "$scan" = 1 ]]; then
+	echo "Collecting bluetooth devices for 15 seconds:"
+	sleep 1
+	timeout 15 bluetoothctl scan on 2>&1 | tee "$da"
+	echo
+	read -p "Turn on bluetooth device (enter)"
+	timeout 15 bluetoothctl scan on 2>&1 | tee "$db"
+	echo "Created new captures as:"
+	echo " $da"
+	echo " $db"
+fi
+cat "$da" | grep Device | cut -d' ' -f 3 | sort | uniq > "$uniqa"
+cat "$db" | grep Device | cut -d' ' -f 3 | sort | uniq > "$uniqb"
+echo "Final sorted unique devices placed in:"
+echo " $uniqa"
+echo " $uniqb"
+colordiff "$uniqa" "$uniqb"
+

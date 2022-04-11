@@ -207,6 +207,9 @@ class MyDelegate(btle.DefaultDelegate):
         # print("Notif: %s" % data)
         global yvs, xvs
         global last_webupd_time
+        if args.eval:
+            print("Data:", data)
+            return
         ints = byte_array_to_int_array(data)
         lenny = len(ints)
         # 10-lines format: 254 10 85 0 <BPM> <SPO2> 6 ? ? ?
@@ -306,7 +309,6 @@ if do_plot:
 def bt_connect():
     global btdev
     print("Connecting...")
-    #btdev = btle.Peripheral(final_mac)
     btdev = btle.Peripheral(args.mac_address)
     print("Connected!")
     btdev.setDelegate(MyDelegate())
@@ -407,6 +409,8 @@ def get_args():
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
     arg_parser.add_argument(
         '-c', '--clear', help="Clear LCD at start", action='store_true')
+    arg_parser.add_argument(
+        '-e', '--eval', help="Eval bluetooth device data only (use with -a to check out a new device)", action='store_true')
     args = arg_parser.parse_args()
     return args
 
