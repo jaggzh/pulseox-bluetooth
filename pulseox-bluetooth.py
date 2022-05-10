@@ -11,6 +11,8 @@
 #import playsound  # Not using right now
 import pysine      # Used for playing an alert tone
 import sys
+import ovals       # Other values from pulseox (like SpO2 trace)
+from threading import Thread
 
 # import time
 # from pysinewave import SineWave
@@ -82,6 +84,7 @@ import sys
 import time
 from argparse import ArgumentParser
 
+#import bluepy
 from bluepy import btle  # linux only (no mac)
 
 do_plot=True
@@ -204,20 +207,26 @@ class MyDelegate(btle.DefaultDelegate):
         btle.DefaultDelegate.__init__(self)
 
     def handleNotification(self, cHandle, data):
-        # print("Notif: %s" % data)
+        if args.eval and args.verbose > 0:
+            print("Notif: %s" % data)
         global yvs, xvs
         global last_webupd_time
-        if args.eval:
-            print("Data:", data)
-            return
         ints = byte_array_to_int_array(data)
+        if args.eval:
+            print("Data:", ints)
+            return
         lenny = len(ints)
-        # 10-lines format: 254 10 85 0 <BPM> <SPO2> 6 ? ? ?
-        #  8-lines format: {254 8 86} ? 0 ? ? ?
+        # 10-value line: 254 10 85 0 <BPM> <SPO2> 6 ? ? ?
+        #  8-value line: {254 8 86} a 0 ? b c  <-- maybe trace
+        #                 0   1 2   3 4 5 6 7
 
         # [10] 254 10 85 0 92 100 7 116 178 76
 
-        if ints[0] == 254 and ints[1] == 10:
+        if ints[0] == 254 and ints[1] == 8:  # 8-line format
+            ovals.set_from_ints(ints)
+            ovals.plot(ints)
+
+        elif ints[0] == 254 and ints[1] == 10:
             if len(ints) < 6: 
                 print("Invalid data line (type 'BPM/SpO2'):", data)
             else:
@@ -236,10 +245,13 @@ class MyDelegate(btle.DefaultDelegate):
                     print("  DISCONNECTED!")
                 else:
                     if settings.do_web_lcd and time.time() - last_webupd_time > 5:
-                        display.display(ip=settings.ip_lcd, 
-                                        bpm=bpm,
-                                        spo2=spo2,
-                                        alert=alert_type)
+                        display_thread = Thread(
+                                target=display.display,
+                                kwargs={'ip': settings.ip_lcd, 
+                                        'bpm': bpm,
+                                        'spo2': spo2,
+                                        'alert': alert_type})
+                        display_thread.start()
                         last_webupd_time = time.time()
         elif ints[0] == 254 and ints[1] == 8:
             if len(ints) < 8: 
@@ -309,7 +321,26 @@ if do_plot:
 def bt_connect():
     global btdev
     print("Connecting...")
-    btdev = btle.Peripheral(args.mac_address)
+    #btdev = btle.Peripheral(args.mac_address)
+    connected = False
+    while connected is False:
+        try:
+            btdev = btle.Peripheral(args.mac_address)
+        except btle.BTLEDisconnectError as e:
+            print(f"{bgbro}{whi} Couldn't connect to {yel}{args.mac_address}{whi} {rst}")
+            print("KNOWN Exception found:", e)
+            print("KNOWN Exception type:", type(e))
+            print(f"{whi}Trying again in 3 secs...{rst}")
+            time.sleep(3)
+        connected = True
+    #        #import ipdb; ipdb.set_trace();
+    #        #pass
+        #except Exception as e:
+            #print("Unknown Exception found:", e)
+            #print("Unknown Exception type:", type(e))
+            #import ipdb; ipdb.set_trace();
+            #pass
+
     print("Connected!")
     btdev.setDelegate(MyDelegate())
     # print("Delegate set")
@@ -330,6 +361,7 @@ def main():
 
     args = get_args()
     flogging.setup_log()
+    ovals.setup()
 
     final_mac = args.mac_address
 

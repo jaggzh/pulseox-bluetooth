@@ -190,7 +190,9 @@ def gyx(sy,sx):
 def cls():
 	apfl(esc + "[2J")
 	sys.stdout.flush()
-def gright(): apfl(esc + "[C")
+def gright(v=None):
+	if v is None: apfl(esc + "[C")
+	else: apfl(esc + f"[{v}C")
 def gleft(): apfl(esc + "[D")
 def gup(): apfl(esc + "[A")
 def gdown(): apfl(esc + "[B")

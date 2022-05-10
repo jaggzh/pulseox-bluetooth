@@ -1,6 +1,7 @@
 scriptname=pulseox-bluetooth.py
 editfiles=Makefile \
 		  $(scriptname) \
+		  ovals.py \
 		  flogging.py \
 		  usercallbacks.py \
 		  usercallbacks-example.py \
