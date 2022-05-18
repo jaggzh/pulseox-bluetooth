@@ -58,6 +58,7 @@ alert_delay_secs = {
         'bpm': 5,
         'disco': 5,
         }
+bpm_low=85   # 4 testing
 bpm_low=49
 bpm_high=93  # 4 testing
 bpm_high=120
@@ -66,6 +67,15 @@ o2_low=86
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
+
+alert_bmp_freq = 440
+alert_o2_freq = 540
+alert_disco_freq = 199
+# pysine.sine(frequency=alert_bmp_freq, duration=.5)
+# pysine.sine(frequency=alert_o2_freq, duration=.5)
+# pysine.sine(frequency=alert_disco_freq, duration=.5)
+# sys.exit()
+
 log_hours=0                 # Could be a lot of data points. We keep each sample
                             #  currently.
 log_mins=log_hours*60
@@ -161,21 +171,21 @@ def alert_bpm(avg):
     #playsound.playsound('sample.mp3')
     if time.time()-last_alert['bpm'] > alert_delay_secs['bpm']:
         if settings.alert_audio:
-            pysine.sine(frequency=440.0, duration=1.0)
+            pysine.sine(frequency=alert_bmp_freq, duration=1.0)
         last_alert['bpm']=time.time()
 
 def alert_o2(avg):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
     if time.time()-last_alert['o2'] > alert_delay_secs['o2']:
         if settings.alert_audio:
-            pysine.sine(frequency=540.0, duration=1.0)
+            pysine.sine(frequency=alert_o2_freq, duration=1.0)
         last_alert['o2']=time.time()
 
 def alert_disco():
     pfp(bmag, "WARNING. Disconnected", rst)
     if time.time()-last_alert['disco'] > alert_delay_secs['disco']:
         if settings.alert_audio:
-            pysine.sine(frequency=199.0, duration=1.0)
+            pysine.sine(frequency=alert_disco_freq, duration=1.0)
         last_alert['disco']=time.time()
 
 def handle_alerts():
@@ -233,7 +243,8 @@ class MyDelegate(btle.DefaultDelegate):
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
-                print(f"BPM   : {bpm}  SpO2: {spo2}")
+                ovals.show_data(bpm=bpm, spo2=spo2)
+                #print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:
                     print(f"Alert type: {alert_type}")
