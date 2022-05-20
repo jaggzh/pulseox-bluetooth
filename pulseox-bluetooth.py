@@ -337,13 +337,13 @@ def bt_connect():
     while connected is False:
         try:
             btdev = btle.Peripheral(args.mac_address)
+            connected = True
         except btle.BTLEDisconnectError as e:
             print(f"{bgbro}{whi} Couldn't connect to {yel}{args.mac_address}{whi} {rst}")
             print("KNOWN Exception found:", e)
             print("KNOWN Exception type:", type(e))
             print(f"{whi}Trying again in 3 secs...{rst}")
             time.sleep(3)
-        connected = True
     #        #import ipdb; ipdb.set_trace();
     #        #pass
         #except Exception as e:
@@ -351,6 +351,8 @@ def bt_connect():
             #print("Unknown Exception type:", type(e))
             #import ipdb; ipdb.set_trace();
             #pass
+    for svc in btdev.services:
+        print(" Service:", str(svc))
 
     print("Connected!")
     btdev.setDelegate(MyDelegate())
