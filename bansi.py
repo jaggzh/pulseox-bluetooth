@@ -159,7 +159,9 @@ def get_linux_terminal(): # x,y
 	env = os.environ
 	import sys
 	cr = None
-	if sys.stdout.isatty():
+	if not sys.stdout.isatty():
+		print(bred, "bansi: No TTY found to output plot", rst)
+	else:
 		have_term = True
 		def ioctl_GWINSZ(fd):
 			try:
