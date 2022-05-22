@@ -1,4 +1,5 @@
 import os
+import sys
 from bansi import *
 
 # Settings
@@ -10,7 +11,7 @@ ovals=dict()
 ia=3; ib=6; ic=7  # Indexes into integer list of other data
 sampctr=0      # Counter. Don't touch me. For show_every_n_samples
 show_data_toggle = False # This is NOT an option. It toggles to flip the data output
-
+have_term = False
 
 def setup():
     global ovals
@@ -22,9 +23,12 @@ def setup():
     ovals['b']=dict()
     ovals['c']=dict()
     for i in ovals.keys():
-        ovals[i]['min']=256
-        ovals[i]['max']=-256
-    cols,rows = os.get_terminal_size()
+        ovals[i]['min'] = 256
+        ovals[i]['max'] = -256
+    if not sys.stdout.isatty(): cols,rows = 2,2
+    else:
+        cols,rows = os.get_terminal_size()
+        have_term = True
 
     plotcola = 1
     plotwidth = int(cols * widthperc - 3)
@@ -43,7 +47,8 @@ def set_from_ints(ints):
 def show_data(bpm=None, spo2=None):
     import pyfiglet
     global show_data_toggle
-    col=50
+    if not has_term: return
+    col=40
     width=cols-col-1
     # fraktur aquaplan char1___ future_7
     fig = pyfiglet.Figlet(font="aquaplan", width=width)
@@ -59,10 +64,12 @@ def show_data(bpm=None, spo2=None):
     gbottomleft()
 
 def gbottomleft():
+    if not has_term: return
     gxy(1,rows)
 
 def plot(ints):
     global sampctr
+    if not has_term: return
     sampctr += 1
     if (sampctr % show_every_n_samples) == 0:
         sampreducer = 0
@@ -83,17 +90,20 @@ def plot(ints):
 def set_scroll_region_plot():
     # [5;130s left margin at column 5 and right at column 130
     # [4;20r   top margin at line 4 and bottom at line 20
+    if not has_term: return
     print(f"\033[{plotcola};{plotcolb}s", end='')
 
 def set_scroll_region_data():
+    if not has_term: return
     print(f"\033[{plotcolb+1};{cols-1}s", end='')
 
 def get_plot_col(idchar, val):
-	amax = ovals[idchar]['max']
-	amin = ovals[idchar]['min']
-	denom = amax - amin
-	if denom == 0: denom=1
-	pos = ((val-amin)/denom) * (cols * widthperc - 3)
-	return int(pos)
+    if not has_term: return
+    amax = ovals[idchar]['max']
+    amin = ovals[idchar]['min']
+    denom = amax - amin
+    if denom == 0: denom=1
+    pos = ((val-amin)/denom) * (cols * widthperc - 3)
+    return int(pos)
 
 # vim: et

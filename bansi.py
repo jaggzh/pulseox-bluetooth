@@ -40,6 +40,11 @@ import sys
 # 	print(*x, **y)
 # 	sys.stdout.flush()
 
+# Begin with assuming we have no output terminal
+# We have to do this because of get_linux_terminal / get_linux_termsize_xy
+# (which, if it's a terminal, will get the size)
+have_term = False
+
 esc="^["
 esc="\033"
 bgbla=esc + "[40m"
@@ -149,18 +154,22 @@ def get_linux_termsize_xy(): # x,y
 	return get_linux_terminal()
 
 def get_linux_terminal(): # x,y
+	global have_term
 	import os
 	env = os.environ
-	def ioctl_GWINSZ(fd):
-		try:
-			import fcntl, termios, struct, os
-			cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ,
-		'1234'))
-		except:
-			return
-		return cr
-	cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
-	if not cr:
+	import sys
+	cr = None
+	if sys.stdout.isatty():
+		have_term = True
+		def ioctl_GWINSZ(fd):
+			try:
+				import fcntl, termios, struct, os
+				cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+			except:
+				return
+			return cr
+		cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+	if have_term and not cr:
 		try:
 			fd = os.open(os.ctermid(), os.O_RDONLY)
 			cr = ioctl_GWINSZ(fd)

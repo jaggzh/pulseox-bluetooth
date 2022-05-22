@@ -379,7 +379,7 @@ def main():
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
     if settings.do_web_lcd:
-        if args.clear:
+        if not args.noclear:
             display.initial_clear()
 
     prev=None
@@ -451,7 +451,7 @@ def get_args():
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
     arg_parser.add_argument(
-        '-c', '--clear', help="Clear LCD at start", action='store_true')
+        '-C', '--noclear', help="Clear LCD at start", action='store_false')
     arg_parser.add_argument(
         '-e', '--eval', help="Eval bluetooth device data only (use with -a to check out a new device)", action='store_true')
     args = arg_parser.parse_args()
