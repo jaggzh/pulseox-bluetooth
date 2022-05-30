@@ -1,6 +1,15 @@
-import os
+import os # get_terminal_size
 import sys
 from bansi import *
+import signal # SIGWINCH
+
+def resize_handler(signum, frame):
+    global cols,rows
+    if have_term:
+        print("Resize happened")
+        cols, rows = os.get_terminal_size()
+        print(f"New size: {cols} x {rows}")
+        set_term_size_dependencies()
 
 # Settings
 widthperc = .25   # How much of screen to take up, left-right, with the SpO2 trace
@@ -17,7 +26,6 @@ def setup():
     global have_term
     global ovals
     global cols,rows
-    global plotcola, plotcolb
     global bpmcola, bpmcolb
     ovals=dict()
     ovals['a']=dict()
@@ -32,7 +40,11 @@ def setup():
     else:
         cols,rows = os.get_terminal_size()
         have_term = True
-    
+    set_term_size_dependencies()
+    signal.signal(signal.SIGWINCH, resize_handler)
+
+def set_term_size_dependencies():
+    global plotcola, plotcolb
     plotcola = 1
     plotwidth = int(cols * widthperc - 3)
     plotcolb = plotcola+plotwidth
@@ -56,8 +68,18 @@ def show_data(bpm=None, spo2=None):
     # fraktur aquaplan char1___ future_7
     fig = pyfiglet.Figlet(font="aquaplan", width=width)
     #tarr = fig.renderText(f"BPM {bpm}, SPO2 {sp02}
-    if not show_data_toggle: tarr = fig.renderText(f"BPM {bpm}")
-    else:                    tarr = fig.renderText(f"OX {spo2}")
+
+    # if not show_data_toggle: tarr = fig.renderText(f"BPM {bpm}")
+    # else:                    tarr = fig.renderText(f"OX {spo2}")
+
+    try:
+        if not show_data_toggle: tarr = fig.renderText(f"BPM {bpm}")
+        else:                    tarr = fig.renderText(f"OX {spo2}")
+    except: # ^^ renderText() fails if the width was too small
+            #    Let's set some tiny silly text instead:
+        if not show_data_toggle: tarr = f"BPM {bpm}"
+        else:                    tarr = f"OX {spo2}"
+        
     show_data_toggle = not show_data_toggle
     tarr = tarr.split('\n')
     height = len(tarr)

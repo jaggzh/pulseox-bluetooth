@@ -255,7 +255,7 @@ class MyDelegate(btle.DefaultDelegate):
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
-                    if settings.do_web_lcd and time.time() - last_webupd_time > 5:
+                    if settings.do_web_lcd and time.time() - last_webupd_time > 3:
                         display_thread = Thread(
                                 target=display.display,
                                 kwargs={'ip': settings.ip_lcd, 
@@ -397,8 +397,9 @@ def main():
             # else:
                 #sys.exit()
                 if time.time() - bt_last_connect_try > bt_reconnect_delay:
-                    print("Unknown error (it's not BTLEDisconnectError). Re-connecting:")
+                    print("Unknown error (it's not BTLEDisconnectError). NOT Re-connecting:")
                     print(" (Error:", e, ")")
+                    btdev.disconnect()
                     bt_last_connect_try = time.time()
                     bt_connect()
                     print("Reconnected!")
