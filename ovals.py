@@ -1,3 +1,4 @@
+import pyfiglet
 import os # get_terminal_size
 import sys
 from bansi import *
@@ -60,7 +61,6 @@ def set_from_ints(ints):
     if ints[ic] > ovals['c']['max']: ovals['c']['max'] = ints[ic]
 
 def show_data(bpm=None, spo2=None):
-    import pyfiglet
     global show_data_toggle
     if not have_term: return
     col=40

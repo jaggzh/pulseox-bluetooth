@@ -61,17 +61,19 @@ alert_delay_secs = {
 bpm_low=85   # 4 testing
 bpm_low=49
 bpm_high=93  # 4 testing
-bpm_high=120
+bpm_high=100
 o2_low=97    # 4 testing
 o2_low=86
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
 
-alert_bmp_freq = 440
+alert_bpm_low_freq = 260
+alert_bpm_high_freq = 440
 alert_o2_freq = 540
 alert_disco_freq = 199
-# pysine.sine(frequency=alert_bmp_freq, duration=.5)
+# pysine.sine(frequency=alert_bpm_low_freq, duration=.5)
+# pysine.sine(frequency=alert_bpm_high_freq, duration=.5)
 # pysine.sine(frequency=alert_o2_freq, duration=.5)
 # pysine.sine(frequency=alert_disco_freq, duration=.5)
 # sys.exit()
@@ -165,13 +167,14 @@ def avg_log(log=None, dur=None, prune=True):
         print(f"Average is 0: ", log)
     return avg
 
-def alert_bpm(avg):
+def alert_bpm(avg, high=False):
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound
     #playsound.playsound('sample.mp3')
+    freq = alert_bpm_low_freq if not high else alert_bpm_high_freq
     if time.time()-last_alert['bpm'] > alert_delay_secs['bpm']:
         if settings.alert_audio:
-            pysine.sine(frequency=alert_bmp_freq, duration=1.0)
+            pysine.sine(frequency=freq, duration=1.0)
         last_alert['bpm']=time.time()
 
 def alert_o2(avg):
@@ -204,9 +207,12 @@ def handle_alerts():
         if args.verbose > 0:
             print("  BPM avg:", bpm_avg)
             print("   O2 avg:", o2_avg)
-        if bpm_avg >= bpm_high or bpm_avg <= bpm_low:
-            alert_bpm(bpm_avg)
+        if bpm_avg >= bpm_high:
             ret_alert = 'bpm'
+            alert_bpm(bpm_avg, high=True)
+        elif bpm_avg <= bpm_low:
+            ret_alert = 'bpm'
+            alert_bpm(bpm_avg)
         elif o2_avg <= o2_low:
             alert_o2(o2_avg)
             ret_alert = 'spo2'
