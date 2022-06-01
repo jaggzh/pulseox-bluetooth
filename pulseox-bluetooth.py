@@ -61,7 +61,7 @@ alert_delay_secs = {
 bpm_low=85   # 4 testing
 bpm_low=49
 bpm_high=93  # 4 testing
-bpm_high=100
+bpm_high=120
 o2_low=97    # 4 testing
 o2_low=86
 # Internal logs
