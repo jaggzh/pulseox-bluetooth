@@ -59,7 +59,7 @@ alert_delay_secs = {
         'disco': 5,
         }
 bpm_low=85   # 4 testing
-bpm_low=49
+bpm_low=39
 bpm_high=93  # 4 testing
 bpm_high=120
 o2_low=97    # 4 testing
@@ -254,9 +254,9 @@ class MyDelegate(btle.DefaultDelegate):
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:
                     print(f"Alert type: {alert_type}")
-                    print("Ints:", ints)
-                    print(" BPM Log:", bpm_log)
-                    print("  O2 Log:", o2_log)
+                    # print("Ints:", ints)
+                    # print(" BPM Log:", bpm_log)
+                    # print("  O2 Log:", o2_log)
                 flogging.handle_filelog(bpm=bpm, spo2=spo2, time=time.time(), alert=alert_type)
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
@@ -352,11 +352,11 @@ def bt_connect():
             time.sleep(3)
     #        #import ipdb; ipdb.set_trace();
     #        #pass
-        #except Exception as e:
-            #print("Unknown Exception found:", e)
-            #print("Unknown Exception type:", type(e))
-            #import ipdb; ipdb.set_trace();
-            #pass
+        except Exception as e:
+            print("Unknown Exception found:", e)
+            print("Unknown Exception type:", type(e))
+            # import ipdb; ipdb.set_trace();
+            # pass
     for svc in btdev.services:
         print(" Service:", str(svc))
 
@@ -455,7 +455,7 @@ def byte_array_to_int_array(value):
 def get_args():
     arg_parser = ArgumentParser(description="BLE Pulse Oximeter Monitor")
     arg_parser.add_argument(
-        '-a', '--mac_address', help="MAC address of PulseOx device",
+        '-a', '--mac_address', help="MAC address of PulseOx device (regex)",
         default=settings.pomac)
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
