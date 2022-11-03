@@ -42,11 +42,12 @@ fi
 if [[ "$#" -gt 0 ]]; then
 	logs=("$1")
 else
-	readarray -t logs < <(ls *.log | tail -1)
+	readarray -t logs < <(ls *.log | tail -120)
 fi
 # Final version should cat *.log
-cat "${logs[@]}" | grep -v '255	127' > "$tmpf"
-#cat *.log | grep -v '255	127' > "$tmpf"
+cat "${logs[@]}" | grep -a -v '255	127' > "$tmpf"
+echo "${logs[@]}"
+# cat *.log | grep -v '255	127' > "$tmpf"
 
 # # For testing, just add a few lines of data:
 # cat <<EOT > "$tmpf"
@@ -56,8 +57,8 @@ cat "${logs[@]}" | grep -v '255	127' > "$tmpf"
 # EOT
 
 
-line1=$(cat "$tmpf" | grep -v '^#' | grep -v $'\t255\t' | head -1)
-linen=$(cat "$tmpf" | grep -v '^#' | grep -v $'\t255\t' | tail -1)
+line1=$(cat "$tmpf" | grep -av '^#' | grep -av $'\t255\t' | head -1)
+linen=$(cat "$tmpf" | grep -av '^#' | grep -av $'\t255\t' | tail -1)
 printf "Line1: %s\n" "$line1"
 printf "LineN: %s\n" "$linen"
 fmt1=$(printf "%s" "$line1" | sed -e $'s/\t.*$//')
@@ -68,14 +69,18 @@ printf "Range: $fmt1 - $fmtn\n"
 
 exec {gp}> >(gnuplot)
 
+lines=$(wc -l "$tmpf" | sed -e 's/ .*$//')
+
 cat <<EOT >&"$gp"
+ntics = 2
 set xdata time
 set timefmt "%Y-%m-%d %H:%M:%S"
 set xrange ["$fmt1":"$fmtn"]
 set format x "%m/%d %H:%M"
 set timefmt "%Y-%m-%d %H:%M:%S"
-set xtics rotate by 75 right
-plot "$tmpf" using 1:$target_col with lines
+#stats "$tmpf" using 1 name 'x' nooutput
+set xtics $lines/4 rotate by 75 right
+plot "$tmpf" using 1:$target_col with lines title "SpO2", "" using 1:$col_bpm with lines title "BPM",
 pause -1
 EOT
 sleep 1
