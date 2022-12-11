@@ -138,7 +138,8 @@ def display(
 		last_alert = True
 		alert_border = True
 	else:
-		ltsize -= 1
+		double_line=True
+		ltsize += 2
 		if last_alert: clear = True
 		last_alert = False
 	if double_line:
@@ -157,7 +158,7 @@ def display(
 			x = curx,
 			y = cury,
 			color='r=255,g=255,b=255',
-			bgcolor='r=100',
+			bgcolor='r=150',
 			padx=2, pady=1,
 		)
 
