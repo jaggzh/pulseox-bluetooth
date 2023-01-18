@@ -13,6 +13,7 @@ import pysine      # Used for playing an alert tone
 import sys
 import ovals       # Other values from pulseox (like SpO2 trace)
 from threading import Thread
+import subprocess
 
 # import time
 # from pysinewave import SineWave
@@ -62,7 +63,7 @@ bpm_low=85   # 4 testing
 bpm_low=39
 bpm_high=93  # 4 testing
 bpm_high=120
-o2_low=97    # 4 testing
+o2_low=98    # 4 testing
 o2_low=86
 # Internal logs
 bpm_log=[]  # []['time','val']
@@ -176,6 +177,9 @@ def alert_bpm(avg, high=False):
         if settings.alert_audio:
             pysine.sine(frequency=freq, duration=1.0)
         last_alert['bpm']=time.time()
+        # BMP is our default; we don't bother to keep saying "bee pee em "
+        # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
+        subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
 
 def alert_o2(avg):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
@@ -183,6 +187,7 @@ def alert_o2(avg):
         if settings.alert_audio:
             pysine.sine(frequency=alert_o2_freq, duration=1.0)
         last_alert['o2']=time.time()
+        subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
 
 def alert_disco():
     pfp(bmag, "WARNING. Disconnected", rst)
@@ -190,6 +195,7 @@ def alert_disco():
         if settings.alert_audio:
             pysine.sine(frequency=alert_disco_freq, duration=1.0)
         last_alert['disco']=time.time()
+        subprocess.run(settings.speech_synth_args, input="disconnected".encode())
 
 def handle_alerts():
     ret_alert = None  # Return: None, 'bpm', 'spo2'

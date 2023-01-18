@@ -26,6 +26,10 @@ alert_audio=True
 logdir='/home/me/logs/pulseox-john'
 logfreq=60                   # Seconds: Don't log each reading
 
+# Speech synthesis for additional alert info
+# (This takes text via stdin)
+speech_synth_args=['/usr/bin/festival', '--tts']
+
 # Data format/Model info should eventually be here, if others add
 # more models
 
