@@ -179,7 +179,8 @@ def alert_bpm(avg, high=False):
         last_alert['bpm']=time.time()
         # BMP is our default; we don't bother to keep saying "bee pee em "
         # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
-        subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
+        if settings.do_speech:
+            subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
 
 def alert_o2(avg):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
@@ -187,7 +188,8 @@ def alert_o2(avg):
         if settings.alert_audio:
             pysine.sine(frequency=alert_o2_freq, duration=1.0)
         last_alert['o2']=time.time()
-        subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
+        if settings.do_speech:
+            subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
 
 def alert_disco():
     pfp(bmag, "WARNING. Disconnected", rst)
@@ -195,7 +197,8 @@ def alert_disco():
         if settings.alert_audio:
             pysine.sine(frequency=alert_disco_freq, duration=1.0)
         last_alert['disco']=time.time()
-        subprocess.run(settings.speech_synth_args, input="disconnected".encode())
+        if settings.do_speech:
+            subprocess.run(settings.speech_synth_args, input="disconnected".encode())
 
 def handle_alerts():
     ret_alert = None  # Return: None, 'bpm', 'spo2'
@@ -348,7 +351,9 @@ def bt_connect():
     connected = False
     while connected is False:
         try:
+            print(f"Connecting with btle.Peripheral({args.mac_address})")
             btdev = btle.Peripheral(args.mac_address)
+            print(f" btdev retrieved {btdev}")
             connected = True
         except btle.BTLEDisconnectError as e:
             print(f"{bgbro}{whi} Couldn't connect to {yel}{args.mac_address}{whi} {rst}")
@@ -403,6 +408,7 @@ def main():
             # print("Waiting for notifications:")
             btdev.waitForNotifications(1.0)
         #except BTLEDisconnectedError as e:
+        #  (Error type: <class 'bluepy.btle.BTLEDisconnectError'> )
         except Exception as e:
             # if type(e) is btle.BTLEDisconnectError:
             #     print("We disconnected.  Ignoring it. Not sure what will happen now")
@@ -411,8 +417,12 @@ def main():
                 if time.time() - bt_last_connect_try > bt_reconnect_delay:
                     print("Unknown error (it's not BTLEDisconnectError). NOT Re-connecting:")
                     print(" (Error:", e, ")")
+                    print(" (Error type:", type(e), ")")
+                    print("Disconnecting...", flush=True)
                     btdev.disconnect()
+                    print("Setting last connect try to 'right now':", flush=True)
                     bt_last_connect_try = time.time()
+                    print("Reconnecting...", flush=True)
                     bt_connect()
                     print("Reconnected!")
                 else:
