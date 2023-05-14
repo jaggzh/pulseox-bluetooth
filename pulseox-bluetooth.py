@@ -92,6 +92,7 @@ bt_last_connect_try=0
 btdev=None
 final_mac=None
 args=None
+count_alert_bpm = count_alert_o2 = 0
 
 import sys
 import time
@@ -168,7 +169,7 @@ def avg_log(log=None, dur=None, prune=True):
         print(f"Average is 0: ", log)
     return avg
 
-def alert_bpm(avg, high=False):
+def alert_bpm(avg, high=False, cnt=0):
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound
     #playsound.playsound('sample.mp3')
@@ -182,7 +183,7 @@ def alert_bpm(avg, high=False):
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
 
-def alert_o2(avg):
+def alert_o2(avg, cnt=0):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
     if time.time()-last_alert['o2'] > alert_delay_secs['o2']:
         if settings.alert_audio:
@@ -201,6 +202,8 @@ def alert_disco():
             subprocess.run(settings.speech_synth_args, input="disconnected".encode())
 
 def handle_alerts():
+    global count_alert_bpm
+    global count_alert_o2
     ret_alert = None  # Return: None, 'bpm', 'spo2'
     if len(bpm_log) < 5: return None  # Need more data.
 
@@ -217,14 +220,21 @@ def handle_alerts():
             print("  BPM avg:", bpm_avg)
             print("   O2 avg:", o2_avg)
         if bpm_avg >= bpm_high:
+            alert_bpm(bpm_avg, high=True, cnt=count_alert_bpm)
+            count_alert_bpm += 1
             ret_alert = 'bpm'
-            alert_bpm(bpm_avg, high=True)
         elif bpm_avg <= bpm_low:
+            alert_bpm(bpm_avg, cnt=count_alert_bpm)
+            count_alert_bpm += 1
             ret_alert = 'bpm'
-            alert_bpm(bpm_avg)
-        elif o2_avg <= o2_low:
-            alert_o2(o2_avg)
-            ret_alert = 'spo2'
+        else:
+            count_alert_bpm = 0 # Reset
+            if o2_avg <= o2_low:
+                count_alert_o2 += 1
+                if ret_alert is None: # We don't sound multiple alarms
+                    alert_o2(o2_avg, cnt=count_alert_o2)
+                ret_alert = 'spo2'
+            else: count_alert_o2 = 0  # Reset
     return ret_alert
 
 class MyDelegate(btle.DefaultDelegate):
