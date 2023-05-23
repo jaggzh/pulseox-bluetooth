@@ -37,7 +37,7 @@ def handle_filelog(
     import time                          # time Param changed to import!
 
     logfilename = make_logfilename()
-    print(f"Logfile: {logfilename}"); sys.exit();
+    print(f"Logfile: {logfilename}")
 
     # If it's a new file, open it and write the field names
     if not os.path.isfile(logfilename):
