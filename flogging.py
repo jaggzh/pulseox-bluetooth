@@ -3,6 +3,7 @@ import datetime
 import time
 from pathlib import Path # for Path(logdir).mkdir(parents=True, exist_ok=True)
 import settings
+import sys
 
 logfile=None
 logfile_timefmt = '%Y-%m-%d %H:%M:%S'
@@ -36,6 +37,7 @@ def handle_filelog(
     import time                          # time Param changed to import!
 
     logfilename = make_logfilename()
+    print(f"Logfile: {logfilename}"); sys.exit();
 
     # If it's a new file, open it and write the field names
     if not os.path.isfile(logfilename):
