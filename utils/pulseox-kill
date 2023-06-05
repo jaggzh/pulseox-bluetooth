@@ -1,0 +1,41 @@
+#!/bin/bash
+
+pkill_wr () {
+	a="$1"; shift
+	excludepids=($$ "$@")
+	# echo "pulseox-kill -> pkill_wr(Excluded PIDs:" "${excludepids[@]}"')'
+	# printf 'pgrep -f "%s"\n' "$a"
+	readarray -t pids < <(pgrep -f "$a" | grep -v ^$$\$)
+	# printf 'Pids: {{%s}}\n' "${pids[@]}"
+	if [[ ${#pids[@]} -lt 1 ]]; then
+		echo "  Nothing found to kill"
+	else
+		for p in "${pids[@]}"; do
+			ours=
+			for exp in "${excludepids[@]}"; do
+				if [[ $p = $exp ]]; then
+					ours=1
+					break
+				fi
+			done
+			if [[ -z $ours ]]; then
+				echo "Killing: $p" >&2
+				# cat <<-EOT
+				# 	ps auxwf | grep "$p"
+				# EOT
+				# ps auxwf | grep "$p"
+				kill $p &>/dev/null # Only kill if not an excluded pid
+			fi
+		done
+	fi
+}
+
+pkill_pulseoxes () {
+	pkill_wr 'bash [^ ]*pulseox' "$@"
+	#pkill_wr 'bash.*pulseox[^-]'
+	sleep .25
+	pkill_wr 'bash [^ ]*pulseox-launcher' "$@"
+	sleep .25
+	pkill_wr 'python.*pulseox-bluetooth' "$@"
+}
+pkill_pulseoxes "$@"
