@@ -1,1 +1,1 @@
-venv pulseox
+. ~/venv/pulseox/bin/activate

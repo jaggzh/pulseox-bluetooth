@@ -12,13 +12,42 @@
 # 1. Set po_bin= the path of your pulseox-bluetooth.py
 # 2. Run this script, or map a shortcut to run it.
 
-po_bin=/location/of/pulseox-bluetooth/pulseox-bluetooth.py
+ourdir="$(dirname "$(readlink -f "$0")")"
+ourname="${ourdir##*/}"
+pbname=pulseox-bluetooth.py
+pkname=pulseox-kill
 
-ps auxwf | grep [p]ulseox | sed -e 's/  */ /g' | cut -d' ' -f 2 |
-	while read pid; do
-		if [[ "$pid" != "$$" ]]; then
-			kill "$pid"
-		fi
-	done
+# Find killer of running pulseox-bluetooth.py's
+kill_locs=( "$ourdir/$pkname" "$ourdir/../$pkname" )
+# Try to call pulseox-kill (with our PIDs excluded)
+killdone=
+for kl in "${kill_locs[@]}"; do
+	if [[ -f "$kl" ]]; then
+		"$kl" $$ $PPID  # Passing our pids to exclude from death
+		killdone=1
+		break
+	fi
+done
+if [[ -z $killdone ]]; then
+	echo "No known location of $pkname" >&2
+	for kl in "${kill_locs[@]}"; do echo "Tried $kl" >&2; done
+fi
 
+# Find pulseox-bluetooth.py
+po_bin="$ourdir/../$pbname"
+env_bin="$ourdir/../env.sh"
+if [[ ! -f $po_bin ]]; then
+	po_bin="$ourdir/$pbname"
+	env_bin="$ourdir/env.sh"
+	if [[ ! -f $po_bin ]]; then
+		echo "No known location of $pbname" >&2
+		echo "Tried $ourdir" >&2
+		echo "Tried $ourdir/.." >&2
+		exit
+	fi
+fi
+
+echo "Trying to start venv..."
+. "$env_bin"
+echo "Executing $pbname..."
 "$po_bin"  # Runs the pulseox-bluetooth.py script
