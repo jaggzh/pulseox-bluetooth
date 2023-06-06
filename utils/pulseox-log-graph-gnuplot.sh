@@ -1,6 +1,19 @@
 #!/bin/bash
 # Final version must have cat *.log comments changed around line ~7
 logdir=~/logs/pulseox-patient
+if [[ $# -lt 1 ]]; then
+	echo "You can provide a logdir on the commandline"
+	echo "Defaulting to: $logdir"
+	read -n 1 -t 3 -p "(Proceeding in 5 seconds... q to quit)"
+	if [[ $REPLY = q ]]; then echo; echo 'Aborting'; exit; fi
+elif [[ $# -gt 1 ]]; then
+	echo "More than one argument provided. Not sure what to do."
+	exit
+elif [[ ! -d "$1" ]]; then
+	echo "Not a folder {$1}. An arg needs to be a log dir."
+	exit 1
+else logdir="$1"; shift; fi
+
 if ! cd "$logdir"; then
 	echo "Can't change to logdir: $logdir: $!" >&2
 	exit
