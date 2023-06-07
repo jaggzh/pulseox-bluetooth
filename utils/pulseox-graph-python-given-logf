@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
+
+# def load_data(file_path):
+#     df = pd.read_csv(file_path, sep='\t', comment='#')
+#     df = df[df['AlertType'] != 'disco']
+#     return df
+
+# def load_data(file_path):
+#     df = pd.read_csv(file_path, sep='\t', comment='#', parse_dates=['Time'])
+#     if 'AlertType' in df.columns:
+#         df = df[df['AlertType'] != 'disco']
+#     return df
+
+def load_data(file_path):
+    with open(file_path, 'r') as f:
+        data = f.read().replace('#', '', 1)  # only replace the first '#' character
+
+    from io import StringIO
+    df = pd.read_csv(StringIO(data), sep='\t')
+
+    if 'AlertType' in df.columns:
+        df = df[df['AlertType'] != 'disco']
+
+    return df
+
+def smooth_data(df, window_length, polyorder):
+    df['BPM'] = savgol_filter(df['BPM'], window_length, polyorder)
+    df['O2'] = savgol_filter(df['O2'], window_length, polyorder)
+    return df
+
+def process_path(path):
+    if os.path.isdir(path):
+        df = pd.concat(load_data(os.path.join(path, file))
+                       for file in os.listdir(path) if file.endswith('.log'))
+    else:
+        df = load_data(path)
+    return df
+
+def plot_data(df):
+    plt.figure(figsize=(10, 6))
+    plt.plot(pd.to_datetime(df['Time']), df['BPM'], label='BPM')
+    plt.plot(pd.to_datetime(df['Time']), df['O2'], label='O2')
+    plt.legend()
+    plt.show()
+
+def main():
+    parser = argparse.ArgumentParser(description='Smooth and graph data in log files.')
+    parser.add_argument('paths', metavar='P', type=str, nargs='+',
+                        help='Paths to log files or directories containing log files')
+    parser.add_argument('-f', '--filter', action='store_true',
+                        help='Apply Savitzky-Golay filter to data')
+
+    args = parser.parse_args()
+
+    window_length = 15  # or some other odd number
+    polyorder = 2  # or some other non-negative integer
+
+    df = pd.concat(process_path(path) for path in args.paths)
+    if args.filter:
+        df = smooth_data(df, window_length, polyorder)
+
+    plot_data(df)
+
+if __name__ == '__main__':
+    main()
