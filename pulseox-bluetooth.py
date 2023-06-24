@@ -262,10 +262,11 @@ class MyDelegate(btle.DefaultDelegate):
                 #print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:
-                    print(f"Alert type: {alert_type}")
+                    # print(f"Alert type: {alert_type}")
                     # print("Ints:", ints)
                     # print(" BPM Log:", bpm_log)
                     # print("  O2 Log:", o2_log)
+                    pass
                 flogging.handle_filelog(bpm=bpm, spo2=spo2, time=time.time(), alert=alert_type)
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")

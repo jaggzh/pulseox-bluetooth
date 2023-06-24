@@ -37,7 +37,7 @@ def handle_filelog(
     import time                          # time Param changed to import!
 
     logfilename = make_logfilename()
-    print(f"Logfile: {logfilename}")
+    # print(f"Logfile: {logfilename}")
 
     # If it's a new file, open it and write the field names
     if not os.path.isfile(logfilename):
@@ -52,8 +52,8 @@ def handle_filelog(
     if alert is None: alert='-'
     if time.time()-last_lognotice > lognotice_period:
         last_lognotice = time.time()
-        print(f"Logfile @ {logfilename}")
-        print(logfile_fields_str)
+            # print(f"Logfile @ {logfilename}")
+            # print(logfile_fields_str)
     if time.time()-last_loglinewrite > loglinewrite_period:
         last_loglinewrite = time.time()
         logfile.write(f"{dt.strftime(logfile_timefmt)}\t{bpm}\t{spo2}\t{alert}\n")
