@@ -50,4 +50,7 @@ fi
 echo "Trying to start venv..."
 . "$env_bin"
 echo "Executing $pbname..."
-"$po_bin"  # Runs the pulseox-bluetooth.py script
+# Loop forever in case it errors out and it's not caught
+while true; do
+	"$po_bin"  # Runs the pulseox-bluetooth.py script
+done

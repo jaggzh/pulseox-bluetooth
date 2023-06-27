@@ -387,10 +387,16 @@ def main():
     global args
     global final_mac
 
+    args = get_args()
+    if args.test_audio:
+        print("hi")
+        sys.exit()
+        alert_bpm(140, high=True)
+        alert_o2(80, high=True)
+
     # Clear the screen probably
     if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
 
-    args = get_args()
     flogging.setup_log()
     ovals.setup()
 
@@ -476,6 +482,8 @@ def get_args():
         default=settings.pomac)
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
+    arg_parser.add_argument(
+        '-t', '--test-audio', help="Test the audio alarms", action='store_false')
     arg_parser.add_argument(
         '-C', '--noclear', help="Clear LCD at start", action='store_false')
     arg_parser.add_argument(
