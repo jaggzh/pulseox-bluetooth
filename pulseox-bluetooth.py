@@ -483,9 +483,9 @@ def get_args():
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
     arg_parser.add_argument(
-        '-t', '--test-audio', help="Test the audio alarms", action='store_false')
+        '-t', '--test-audio', help="Test the audio alarms", action='store_true')
     arg_parser.add_argument(
-        '-C', '--noclear', help="Clear LCD at start", action='store_false')
+        '-C', '--noclear', help="Clear LCD at start", action='store_true')
     arg_parser.add_argument(
         '-e', '--eval', help="Eval bluetooth device data only (use with -a to check out a new device)", action='store_true')
     args = arg_parser.parse_args()
