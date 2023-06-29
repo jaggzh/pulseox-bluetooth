@@ -389,10 +389,10 @@ def main():
 
     args = get_args()
     if args.test_audio:
+        alert_bpm(140, high=True)
+        alert_o2(80)
         print("hi")
         sys.exit()
-        alert_bpm(140, high=True)
-        alert_o2(80, high=True)
 
     # Clear the screen probably
     if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
