@@ -59,12 +59,12 @@ alert_delay_secs = {
         'bpm': 5,
         'disco': 5,
         }
-bpm_low=85   # 4 testing
-bpm_low=49
-bpm_high=93  # 4 testing
+bpm_low=95   # 4 testing
+bpm_low=55
+bpm_high=83  # 4 testing
 bpm_high=120
-o2_low=88
 o2_low=99    # 4 testing
+o2_low=88
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
