@@ -47,10 +47,28 @@ if [[ ! -f $po_bin ]]; then
 	fi
 fi
 
+# Function to run command in tmux session
+run_in_tmux() {
+	local cmd=$1
+	tmux has-session -t m 2>/dev/null || tmux new-session -d -s m
+
+	# Check what is running in the first window
+	pane_info=$(tmux list-panes -t m:0 -F "#{pane_current_command}")
+
+	# If only bash is running in the first window
+	if [ "$pane_info" = "bash" ]; then
+		# Send the command to the first window
+		tmux send-keys -t m:0 "$cmd" C-m
+	else
+		# Create a new window and send the command
+		tmux new-window -t m -n 'pulseox'
+		tmux send-keys -t m:pulseox "$cmd" C-m
+	fi
+}
+
 echo "Trying to start venv..."
 . "$env_bin"
-echo "Executing $pbname..."
+
+echo "Executing $pbname in tmux m session..."
 # Loop forever in case it errors out and it's not caught
-while true; do
-	"$po_bin"  # Runs the pulseox-bluetooth.py script
-done
+run_in_tmux "$po_bin"

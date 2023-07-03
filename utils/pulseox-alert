@@ -1,0 +1,107 @@
+#!/bin/bash
+export DISPLAY=:0
+export XAUTHORITY="$HOME"/.Xauthority
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export PULSE_SERVER="unix:/run/user/$(id -u)/pulse/native"
+
+set -x
+
+audio_files=(
+	/d/au/alarms/casablanca_snl--listen_to_me--gnoo.mp3
+	/d/au/alarms/goat-whimper-v1-short-2.mp3
+	/d/au/alarms/goat-scream.mp3
+)
+
+if [[ $# -lt 0 ]]; then
+	level=0
+else
+	level="$1"
+fi
+
+gui_notify () {
+	local title="$1"
+	local msg="$2"
+	/usr/bin/notify-send "$title" "$msg"
+}
+
+play_backup_alarm () {
+	if ! play -n synth 2 polyphonic : sine C4 sine E4 sine G4; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+play_audio_file () {
+	local fn="$1"
+	local player
+	if [[ ${fn##*.} = mp3 ]]; then
+		player=(mpg123 -q)
+	else
+		player=(play)
+	fi
+	if ! "${player[@]}" "$fn"; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+play_audio_firstvalidfile () {
+	local fn
+	local success=0
+	for fn in "${audio_files[@]}"; do
+		if [[ -f "$fn" && -r "$fn" ]]; then
+			if play_audio_file "$fn"; then
+				success=1
+			else
+				success=0
+			fi
+		else
+			echo "Invalid file: $fn" >&2
+			gui_notify "Invalid alert file" "$fn"
+		fi
+	done
+	if [[ $success = 1 ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+play_audio_curlevel () {
+	local level="$1"
+	local aufile
+	if [[ $level -lt 1 ]]; then
+		return 0
+	else
+		level=$((level-1))
+		if [[ $level -gt ${#audio_files[@]} ]]; then
+			aufile=${audio_files[-1]}
+		else
+			aufile=${audio_files[$level]}
+		fi
+		echo "Audio file: $aufile" >&2
+		if [[ -f "$aufile" && -r "$aufile" ]]; then
+			play_audio_file "$aufile"
+		else
+			return 1
+		fi
+	fi
+	return 0
+}
+
+play_audio_level () {
+	level="$1"
+	if ! play_audio_curlevel "$level"; then
+		if ! play_audio_firstvalidfile; then
+			play_backup_alarm "$level"
+		fi
+	fi
+}
+
+if [[ $level -gt 0 ]]; then
+	# Play a sound
+	play_audio_level "$level"
+fi
+# paplay /d/au/alarms/goat-scream.mp3

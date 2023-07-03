@@ -14,6 +14,7 @@ import sys
 import ovals       # Other values from pulseox (like SpO2 trace)
 from threading import Thread
 import subprocess
+import os
 
 # import time
 # from pysinewave import SineWave
@@ -107,6 +108,8 @@ if do_plot:
     import matplotlib.animation as animation
 
 last_webupd_time=0
+last_keepalive_time=0
+
 if settings.do_web_lcd:
     import remotedisplay as display
 
@@ -308,6 +311,27 @@ class MyDelegate(btle.DefaultDelegate):
         if do_plot:
             plt.pause(0.01)
 
+        update_keepalive()
+
+def update_keepalive():
+    # print(f"{bgblu}{bmag}Updating keepalive file: '{yel}{settings.keepalive_filename}{bgblu}{bmag}'{rst}")
+    global last_keepalive_time
+    if time.time() - last_keepalive_time > settings.keepalive_spacing_s:
+        print(bgblu, whi, f"  Updating is due, yay!", rst)
+        last_keepalive_time = time.time()
+        try:
+            pid = os.getpid()  # get current process ID
+            print(bgblu, whi, f"    We are writing... supposed to...", rst)
+            with open(settings.keepalive_filename, 'w') as file:
+                print(bgblu, whi, f"      We really are...", rst)
+                file.write(str(pid))
+        except Exception as e:
+            print(f"An error occurred while writing the PID to the keepalive file!")
+            print(f"   File: {settings.keepalive_filename}")
+            print(f"  Error: {e}")
+    # else:
+    #     print(bgblu, bred, f"  Not time for update", rst)
+
 colors=[ '#eeac99', '#e06377', '#c83349', '#5b9aa0', '#d6d4e0',
     '#b8a9c9', '#622569',
     'red', 'gray', 'blue', 'green', 'cyan', 'magenta', 'yellow',
@@ -354,6 +378,7 @@ def bt_connect():
     #btdev = btle.Peripheral(args.mac_address)
     connected = False
     while connected is False:
+        update_keepalive()
         try:
             print(f"Connecting with btle.Peripheral({args.mac_address})")
             btdev = btle.Peripheral(args.mac_address)

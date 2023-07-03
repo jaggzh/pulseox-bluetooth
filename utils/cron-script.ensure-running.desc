@@ -1,0 +1,49 @@
+#!/bin/bash
+# pulseox monitor management script
+# (Run from a cron-job)
+
+file_pid=/tmp/pulseox.warning.level
+file_warning_level=/tmp/pulseox.pid
+keepalive_max_happy_time_s=60
+cmd_pulseox=pulseox
+cmd_pulseox_alert=pulseox-alert
+
+# Contains and runs run_tests (), which runs all the tests
+
+# Has a function to warn (warn ()), which loads the warning level
+# (a number) and increments it.  If it's the initial creation
+# it starts at 0 and no warning is made.
+# An optional parameter to warn () is the warning level which,
+# if greater than the loaded warning level, serves as the initial
+# level (and therefore a warning can immediately be issued
+# by the caller).
+# For levels>0, prior to incrementing,
+#    '"${cmd_pulseox_alert}" [level]' is executed
+# Warn of existing (pre-increment) level of 1 is logged
+#  with log_warning () [level]
+
+# log_warning ():
+#   Uses syslog
+#   Uses X11 system notifications to try to pop up a warning
+#    on-screen. This should call gui_warning ()
+# gui_warning ():
+#   Should ensure $XDG_RUNTIME_DIR is set.
+
+# If the file is there:
+#   Load PID from contents of file
+#   Check time on file:
+#     If within keepalive_max_happy_time_s (seconds),
+#       call check_pid () with pid just to ensure it *is*
+#        actually running.
+#     Else, old keepalive value!
+#        issue a warn with no params (so the incrementing level
+#         will take effect
+#        ensure_running () called
+# If file is NOT there:
+#   warn () with param of 1 (immediate alert)
+#   call ensure_running ()
+
+# ensure_running ():
+# This should run cmd_pulseox,
+# Then immediately runs run_tests ()
+

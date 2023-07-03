@@ -1,0 +1,70 @@
+#!/bin/bash
+# pulseox monitor management script
+# (Run from a cron-job)
+
+file_pid=/tmp/pulseox.warning.level
+file_warning_level=/tmp/pulseox.pid
+keepalive_max_happy_time_s=60
+cmd_pulseox=pulseox
+cmd_pulseox_alert=pulseox-alert
+
+warn() {
+    local current_level=$(cat "$file_warning_level" 2>/dev/null || echo 0)
+    local initial_level=$1
+    if [[ -n $initial_level && $initial_level -gt $current_level ]]; then
+        current_level=$initial_level
+    fi
+
+    if [[ $current_level -gt 0 ]]; then
+        "${cmd_pulseox_alert}" "$current_level"
+        log_warning "$current_level"
+    fi
+
+    echo $(($current_level + 1)) > "$file_warning_level"
+}
+
+log_warning() {
+    local level=$1
+    logger "pulseox warning level: $level"
+    gui_warning "$level"
+}
+
+gui_warning() {
+    local level=$1
+    export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+    notify-send "PulseOx Alert" "Warning level: $level"
+}
+
+check_pid() {
+    local pid=$1
+    if ! kill -0 "$pid" 2>/dev/null; then
+        return 1
+    fi
+    return 0
+}
+
+ensure_running() {
+    nohup $cmd_pulseox &>/dev/null &
+}
+
+run_tests() {
+    if [[ -f $file_pid ]]; then
+        pid=$(cat "$file_pid")
+        modified_time=$(stat -c %Y "$file_pid")
+        current_time=$(date +%s)
+        time_diff=$(($current_time - $modified_time))
+
+        if [[ $time_diff -le $keepalive_max_happy_time_s ]]; then
+            check_pid $pid || warn
+        else
+            warn
+            ensure_running
+        fi
+    else
+        warn 1
+        ensure_running
+    fi
+}
+
+# Call the main function
+run_tests

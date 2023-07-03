@@ -30,6 +30,12 @@ logfreq=60                   # Seconds: Don't log each reading
 # (This takes text via stdin)
 speech_synth_args=['/usr/bin/festival', '--tts']
 
+# keepalive_dir='/tmp'
+# This is really a heartbeat -- timestamp for monitoring
+# if the process is running
+keepalive_dir='/tmp'
+keepalive_file='/tmp/pulseox.pid'  # Maybe we'll have multiple pulseoxes in the future??
+
 # Data format/Model info should eventually be here, if others add
 # more models
 

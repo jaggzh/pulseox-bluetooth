@@ -1,0 +1,27 @@
+#!/bin/bash
+# Launches the pulseox program
+ourdir="$(dirname "$(readlink -f "$0")")"
+ourname="${ourdir##*/}"
+pbname=pulseox-bluetooth.py
+# Find pulseox-bluetooth.py
+po_bin="$ourdir/../$pbname"
+env_bin="$ourdir/../env.sh"
+if [[ ! -f $po_bin ]]; then
+	po_bin="$ourdir/$pbname"
+	env_bin="$ourdir/env.sh"
+	if [[ ! -f $po_bin ]]; then
+		echo "No known location of $pbname" >&2
+		echo "Tried $ourdir" >&2
+		echo "Tried $ourdir/.." >&2
+		exit
+	fi
+fi
+
+echo "Trying to start venv..."
+. "$env_bin"
+
+echo "Executing $po_bin ..."
+# Loop forever in case it errors out and it's not caught
+while true; do
+	"$po_bin"
+done
