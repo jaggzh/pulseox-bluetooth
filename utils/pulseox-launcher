@@ -14,7 +14,7 @@
 
 ourdir="$(dirname "$(readlink -f "$0")")"
 ourname="${ourdir##*/}"
-pbname=pulseox-bluetooth.py
+pbname=pulseox-loop
 pkname=pulseox-kill
 
 # Find killer of running pulseox-bluetooth.py's
@@ -67,8 +67,12 @@ run_in_tmux() {
 }
 
 echo "Trying to start venv..."
-. "$env_bin"
+if [[ -x $env_bin ]]; then
+	. "$env_bin"
+elif [[ -x ../$env_bin ]]; then
+	. "../$env_bin"
+fi
 
-echo "Executing $pbname in tmux m session..."
+echo "Executing $po_bin in tmux m session..."
 # Loop forever in case it errors out and it's not caught
 run_in_tmux "$po_bin"
