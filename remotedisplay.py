@@ -131,7 +131,7 @@ def display(
 	if lenstr > 4:
 		double_line=True
 	if alert is not None:  # ALERT is TRUE (not True-true, but some string value)
-		print("Sending alert display!");
+		if verbose>0: print("Sending alert display!");
 		double_line=True
 		ltsize += 1
 		if not last_alert: clear = True

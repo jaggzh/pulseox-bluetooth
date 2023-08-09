@@ -59,12 +59,12 @@ alert_delay_secs = {
         'bpm': 5,
         'disco': 5,
         }
-bpm_low=85   # 4 testing
-bpm_low=39
-bpm_high=93  # 4 testing
+bpm_low=95   # 4 testing
+bpm_low=55
+bpm_high=83  # 4 testing
 bpm_high=120
-o2_low=98    # 4 testing
-o2_low=86
+o2_low=99    # 4 testing
+o2_low=88
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
@@ -168,35 +168,38 @@ def avg_log(log=None, dur=None, prune=True):
         print(f"Average is 0: ", log)
     return avg
 
-def alert_bpm(avg, high=False):
+def alert_bpm(avg, high=False, test=False):
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound
     #playsound.playsound('sample.mp3')
     freq = alert_bpm_low_freq if not high else alert_bpm_high_freq
     if time.time()-last_alert['bpm'] > alert_delay_secs['bpm']:
+        if not test:
+            last_alert['bpm']=time.time()
         if settings.alert_audio:
             pysine.sine(frequency=freq, duration=1.0)
-        last_alert['bpm']=time.time()
         # BMP is our default; we don't bother to keep saying "bee pee em "
         # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
 
-def alert_o2(avg):
+def alert_o2(avg, test=False):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
     if time.time()-last_alert['o2'] > alert_delay_secs['o2']:
+        if not test:
+            last_alert['o2']=time.time()
         if settings.alert_audio:
             pysine.sine(frequency=alert_o2_freq, duration=1.0)
-        last_alert['o2']=time.time()
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
 
-def alert_disco():
+def alert_disco(test=False):
     pfp(bmag, "WARNING. Disconnected", rst)
     if time.time()-last_alert['disco'] > alert_delay_secs['disco']:
         if settings.alert_audio:
             pysine.sine(frequency=alert_disco_freq, duration=1.0)
-        last_alert['disco']=time.time()
+        if not test:
+            last_alert['disco']=time.time()
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input="disconnected".encode())
 
@@ -262,10 +265,11 @@ class MyDelegate(btle.DefaultDelegate):
                 #print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:
-                    print(f"Alert type: {alert_type}")
+                    # print(f"Alert type: {alert_type}")
                     # print("Ints:", ints)
                     # print(" BPM Log:", bpm_log)
                     # print("  O2 Log:", o2_log)
+                    pass
                 flogging.handle_filelog(bpm=bpm, spo2=spo2, time=time.time(), alert=alert_type)
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
@@ -386,10 +390,25 @@ def main():
     global args
     global final_mac
 
+    args = get_args()
+    if args.test_audio:
+        print(f"{bcya}BPM high alert:")
+        alert_bpm(140, high=True, test=True)
+        time.sleep(.5)
+        print(f"{bcya}BPM low alert:")
+        alert_bpm(40, high=False, test=True)
+        time.sleep(.5)
+        print(f"{bcya}O2 low alert:")
+        alert_o2(80, test=True)
+        time.sleep(.5)
+        print(f"{bcya}Disconnect alert:")
+        alert_disco(test=True)
+        time.sleep(.5)
+        sys.exit()
+
     # Clear the screen probably
     if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
 
-    args = get_args()
     flogging.setup_log()
     ovals.setup()
 
@@ -476,7 +495,9 @@ def get_args():
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
     arg_parser.add_argument(
-        '-C', '--noclear', help="Clear LCD at start", action='store_false')
+        '-t', '--test-audio', help="Test the audio alarms", action='store_true')
+    arg_parser.add_argument(
+        '-C', '--noclear', help="Clear LCD at start", action='store_true')
     arg_parser.add_argument(
         '-e', '--eval', help="Eval bluetooth device data only (use with -a to check out a new device)", action='store_true')
     args = arg_parser.parse_args()
