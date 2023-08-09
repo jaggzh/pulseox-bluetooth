@@ -23,6 +23,33 @@ sampctr=0      # Counter. Don't touch me. For show_every_n_samples
 show_data_toggle = False # This is NOT an option. It toggles to flip the data output
 have_term = False
 
+def bpm_to_color(bpm):
+    # Define our color palette
+    blue = (0, 0, 255)
+    light_pink = (255, 182, 193)
+    hot_pink = (255, 105, 180)
+    red = (255, 0, 0)
+
+    # Check the bpm and assign the color
+    if bpm <= 55:
+        color = blue
+    elif 55 < bpm < 90:
+        color = light_pink
+    elif 90 <= bpm < 120:
+        # Calculate the gradient between light_pink and hot_pink based on bpm
+        t = (bpm - 90) / 30  # This gives a value between 0 and 1
+        color = (
+            int(light_pink[0] + t * (hot_pink[0] - light_pink[0])),
+            int(light_pink[1] + t * (hot_pink[1] - light_pink[1])),
+            int(light_pink[2] + t * (hot_pink[2] - light_pink[2])),
+        )
+    else:
+        color = red
+
+    # Convert the RGB value to a terminal escape sequence for 24-bit color
+    terminal_sequence = f"\033[38;2;{color[0]};{color[1]};{color[2]}m"
+    return terminal_sequence
+
 def setup():
     global have_term
     global ovals
@@ -84,6 +111,7 @@ def show_data(bpm=None, spo2=None):
     tarr = tarr.replace('#', '▓')
     tarr = tarr.split('\n')
     height = len(tarr)
+    print(bpm_to_color(bpm), end='')
     for i,t in zip(range(height), tarr):
         gxy(col, rows-height+i)
         print(t, end='')
@@ -131,5 +159,13 @@ def get_plot_col(idchar, val):
     if denom == 0: denom=1
     pos = ((val-amin)/denom) * (cols * widthperc - 3)
     return int(pos)
+
+def test_colors():
+    print("BPM color test")
+    for bpm in range(50,130,2):
+        print(f"{bpm:3d} {bpm_to_color(bpm)}▓{rst}")
+
+if __name__ == '__main__':
+    test_colors()
 
 # vim: et
