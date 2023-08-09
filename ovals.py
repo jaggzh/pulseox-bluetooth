@@ -25,7 +25,7 @@ have_term = False
 
 def bpm_to_color(bpm):
     # Define our color palette
-    blue = (0, 0, 255)
+    blue = (160, 140, 255)
     light_pink = (255, 182, 193)
     hot_pink = (255, 105, 180)
     red = (255, 0, 0)
@@ -161,9 +161,12 @@ def get_plot_col(idchar, val):
     return int(pos)
 
 def test_colors():
+    setup()
     print("BPM color test")
     for bpm in range(50,130,2):
-        print(f"{bpm:3d} {bpm_to_color(bpm)}▓{rst}")
+        show_data(bpm=bpm, spo2=99)
+        for i in range(0,7): print('')
+        #print(f"{bpm:3d} {bpm_to_color(bpm)}▓{rst}")
 
 if __name__ == '__main__':
     test_colors()
