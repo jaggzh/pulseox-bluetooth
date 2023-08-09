@@ -81,6 +81,7 @@ def show_data(bpm=None, spo2=None):
         else:                    tarr = f"OX {spo2}"
         
     show_data_toggle = not show_data_toggle
+    tarr = tarr.replace('#', '█')
     tarr = tarr.split('\n')
     height = len(tarr)
     for i,t in zip(range(height), tarr):
