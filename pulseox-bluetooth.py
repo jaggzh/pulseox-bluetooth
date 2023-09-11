@@ -15,6 +15,11 @@ import ovals       # Other values from pulseox (like SpO2 trace)
 from threading import Thread
 import subprocess
 import os
+try:
+    import volpy
+except:
+    print("NOT FOUND: volpy module, or one of its dependencies")
+    volpy=None
 
 # import time
 # from pysinewave import SineWave
@@ -180,11 +185,21 @@ def alert_bpm(avg, high=False, test=False):
         if not test:
             last_alert['bpm']=time.time()
         if settings.alert_audio:
-            pysine.sine(frequency=freq, duration=1.0)
+            play_freq(freq, dur=1.0)
         # BMP is our default; we don't bother to keep saying "bee pee em "
         # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
+
+def play_freq(freq, dur=1.0):
+    if volpy is not None:
+        print(f"Current volume: {volpy.volget()}")
+        volpy.volsave()
+        volpy.volset(settings.alert_volume_start)
+        print(f"Current volume after set: {volpy.volget()}")
+    pysine.sine(frequency=freq, duration=dur)
+    if volpy is not None:
+        volpy.volrestore()
 
 def alert_o2(avg, test=False):
     pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
@@ -192,7 +207,7 @@ def alert_o2(avg, test=False):
         if not test:
             last_alert['o2']=time.time()
         if settings.alert_audio:
-            pysine.sine(frequency=alert_o2_freq, duration=1.0)
+            play_freq(alert_o2_freq)
         if settings.do_speech:
             subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
 
@@ -200,7 +215,7 @@ def alert_disco(test=False):
     pfp(bmag, "WARNING. Disconnected", rst)
     if time.time()-last_alert['disco'] > alert_delay_secs['disco']:
         if settings.alert_audio:
-            pysine.sine(frequency=alert_disco_freq, duration=1.0)
+            play_freq(alert_disco_freq)
         if not test:
             last_alert['disco']=time.time()
         if settings.do_speech:

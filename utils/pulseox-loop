@@ -5,10 +5,9 @@ ourname="${ourdir##*/}"
 pbname=pulseox-bluetooth.py
 # Find pulseox-bluetooth.py
 po_bin="$ourdir/../$pbname"
-env_bin="$ourdir/../env.sh"
+env_bin="$ourdir/../env"
 if [[ ! -f $po_bin ]]; then
 	po_bin="$ourdir/$pbname"
-	env_bin="$ourdir/env.sh"
 	if [[ ! -f $po_bin ]]; then
 		echo "No known location of $pbname" >&2
 		echo "Tried $ourdir" >&2
