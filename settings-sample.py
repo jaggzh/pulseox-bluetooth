@@ -35,6 +35,11 @@ speech_synth_args=['/usr/bin/festival', '--tts']
 # if the process is running
 keepalive_dir='/tmp'
 keepalive_file='/tmp/pulseox.pid'  # Maybe we'll have multiple pulseoxes in the future??
+keepalive_filename='/tmp/pulseox.pid'
+# Update keepalive file every N seconds
+keepalive_spacing_s=5
+
+alert_volume_start=.42  # THIS IS A FLOAT 0-1.0
 
 # Data format/Model info should eventually be here, if others add
 # more models
