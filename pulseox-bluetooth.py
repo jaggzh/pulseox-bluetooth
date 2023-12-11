@@ -253,6 +253,8 @@ class MyDelegate(btle.DefaultDelegate):
         btle.DefaultDelegate.__init__(self)
 
     def handleNotification(self, cHandle, data):
+        if args.verbose>1:
+            print(f"handleNotification()")
         if args.eval and args.verbose > 0:
             print("Notif: %s" % data)
         global yvs, xvs
@@ -269,6 +271,8 @@ class MyDelegate(btle.DefaultDelegate):
         # [10] 254 10 85 0 92 100 7 116 178 76
 
         if ints[0] == 254 and ints[1] == 8:  # 8-line format
+            if args.verbose>1:
+                print(f"  0. Received data. ints={ints}")
             ovals.set_from_ints(ints)
             ovals.plot(ints)
 
@@ -276,6 +280,7 @@ class MyDelegate(btle.DefaultDelegate):
             if len(ints) < 6: 
                 print("Invalid data line (type 'BPM/SpO2'):", data)
             else:
+                print(f"  1. Received data. ints={ints}")
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
@@ -292,6 +297,7 @@ class MyDelegate(btle.DefaultDelegate):
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
+                    print(f"  Some alert received. alert_type={alert_type}")
                     if settings.do_web_lcd and time.time() - last_webupd_time > 3:
                         display_thread = Thread(
                                 target=display.display,
@@ -305,6 +311,7 @@ class MyDelegate(btle.DefaultDelegate):
             if len(ints) < 8: 
                 print("Invalid data line (type 'extra data'):", data)
             else:
+                print(f"  2. Received data. ints={ints}")
                 q,r,s,t = ints[3], ints[5], ints[6], ints[7]
                 yvs[0].append(q)
                 yvs[1].append(r)
@@ -325,6 +332,8 @@ class MyDelegate(btle.DefaultDelegate):
         # print(f"[{lenny}]", " ".join([str(i) for i in ints]))
         if do_plot:
             plt.pause(0.01)
+        if args.verbose>1:
+            print("Updating keepalive...")
 
         update_keepalive()
 
