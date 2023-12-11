@@ -50,6 +50,45 @@ def bpm_to_color(bpm):
     terminal_sequence = f"\033[38;2;{color[0]};{color[1]};{color[2]}m"
     return terminal_sequence
 
+def spo2_to_color(o2):
+    # Define our color palette
+    # Exceptions:
+    #   127 on pulseox bad read (taken off finger)
+    grey = (100,100,100)
+    # Normal range:
+    #   [92-100]  This should be light blue to very light blue
+    light_blue = (100,100,255)
+    very_light_blue = (170,170,255)
+    # Warning, low:
+    #   [88-92>
+
+    #   [85-92)   Let's make 91 be a 
+    blue = (160, 140, 255)
+    light_pink = (255, 182, 193)
+    hot_pink = (255, 105, 180)
+    red = (255, 0, 0)
+
+    # Check the bpm and assign the color
+    if bpm <= 55:
+        color = blue
+    elif 55 < bpm < 90:
+        color = light_pink
+    elif 70 <= spo2 < 89:
+        # Calculate the gradient between light_pink and hot_pink based on bpm
+        t = (bpm - 90) / 30  # This gives a value between 0 and 1
+        color = (
+            int(light_pink[0] + t * (hot_pink[0] - light_pink[0])),
+            int(light_pink[1] + t * (hot_pink[1] - light_pink[1])),
+            int(light_pink[2] + t * (hot_pink[2] - light_pink[2])),
+        )
+    else:
+        color = red
+
+    # Convert the RGB value to a terminal escape sequence for 24-bit color
+    terminal_sequence = f"\033[38;2;{color[0]};{color[1]};{color[2]}m"
+    return terminal_sequence
+
+
 def setup():
     global have_term
     global ovals
@@ -89,6 +128,8 @@ def set_from_ints(ints):
 
 def show_data(bpm=None, spo2=None):
     global show_data_toggle
+    show_o2=show_data_toggle
+
     if not have_term: return
     col=40
     width=cols-col-1
@@ -100,18 +141,21 @@ def show_data(bpm=None, spo2=None):
     # else:                    tarr = fig.renderText(f"OX {spo2}")
 
     try:
-        if not show_data_toggle: tarr = fig.renderText(f"BPM {bpm}")
-        else:                    tarr = fig.renderText(f"OX {spo2}")
+        if show_o2: tarr = fig.renderText(f"OX {spo2}")
+        else:       tarr = fig.renderText(f"BPM {bpm}")
     except: # ^^ renderText() fails if the width was too small
             #    Let's set some tiny silly text instead:
-        if not show_data_toggle: tarr = f"BPM {bpm}"
-        else:                    tarr = f"OX {spo2}"
-        
-    show_data_toggle = not show_data_toggle
+        if show_o2: tarr = f"OX {spo2}"
+        else:       tarr = f"BPM {bpm}"
+
+    color = spo2_to_color(spo2) if show_spo2 else bpm_to_color(bpm)
+
+    show_data_toggle = not show_data_toggle # Flip type for next time
+
     tarr = tarr.replace('#', '▓')
     tarr = tarr.split('\n')
     height = len(tarr)
-    print(bpm_to_color(bpm), end='')
+    print(color, end='')
     for i,t in zip(range(height), tarr):
         gxy(col, rows-height+i)
         print(t, end='')
