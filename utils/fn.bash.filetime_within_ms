@@ -1,0 +1,41 @@
+#!/bin/bash
+filetime_within_ms() {
+    local filename="$1"
+    local interval_ms="$2"
+
+    # Ensure filename and interval are provided
+    if [[ -z "$filename" || -z "$interval_ms" ]]; then
+        echo "Usage: filetime_within_ms filename interval_ms"
+        return 1
+    fi
+
+    # Ensure the file exists
+    if [[ ! -f "$filename" ]]; then
+        echo "File not found: $filename" >&2
+        return 1
+    fi
+
+    # Get current time in milliseconds
+    local current_time_ms=$(date +%s%3N)
+
+    # Get file's last modification time in milliseconds
+    local file_mtime_ms=$(stat --format=%Y "$filename")
+    file_mtime_ms=$((file_mtime_ms * 1000)) # Convert to milliseconds
+
+    echo "Current time: $current_time_ms ms"
+    echo "   File time: $file_mtime_ms ms"
+
+    # Calculate the time difference
+    local time_diff_ms=$((current_time_ms - file_mtime_ms))
+    echo "File time difference: $time_diff_ms ms" >&2
+	echo " (Comparing to interval: $interval_ms ms)" >&2
+
+    # Check if the difference is within the specified interval
+    if [[ $time_diff_ms -le $interval_ms ]]; then
+        echo "File's mtime is within $interval_ms ms." >&2
+        return 0
+    else
+        echo "File's mtime is not within $interval_ms ms." >&2
+        return 1
+    fi
+}
