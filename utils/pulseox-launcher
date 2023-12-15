@@ -1,4 +1,5 @@
 #!/bin/bash
+# exec 2>/tmp/polog
 # Launches the pulseox program
 #
 # I set a keyboard key to run this script, so family/caregivers/nurses
@@ -11,11 +12,31 @@
 # To use:
 # 1. Set po_bin= the path of your pulseox-bluetooth.py
 # 2. Run this script, or map a shortcut to run it.
+we_ran_tracker_file=/tmp/pulseox-launcher-lock
 
 ourdir="$(dirname "$(readlink -f "$0")")"
 ourname="${ourdir##*/}"
 pbname=pulseox-loop
 pkname=pulseox-kill
+
+. "$ourdir/fn.bash.filetime_within_ms"
+play_warning () {
+	play -q -n -c1 synth sin %-1 sin %-9 sin %-5 sin %-2 sin %-25 sin %-30 fade h 0.01 .5 .2
+}
+
+# Try to acquire a lock, exit if cannot
+exec 200>$we_ran_tracker_file
+if ! flock --verbose -n 200; then
+	# Warning sound for those who hold buttons down
+	play_warning
+    exit 1
+fi
+if filetime_within_ms "$we_ran_tracker_file" 3000; then
+	play_warning
+	exit 1
+fi
+# Play soothing reward to those who don't know how to tap a kb button
+play -qn synth -j 3 sin %3 sin %-2 sin %-5 sin %-9 sin %-14 sin %-21 fade h .01 2 1.5 delay 1.3 .5 .76 .54 .27 remix - fade h 0 2.3 .5 norm -1
 
 # Find killer of running pulseox-bluetooth.py's
 kill_locs=( "$ourdir/$pkname" "$ourdir/../$pkname" )
@@ -74,5 +95,4 @@ elif [[ -x ../$env_bin ]]; then
 fi
 
 echo "Executing $po_bin in tmux m session..."
-# Loop forever in case it errors out and it's not caught
 run_in_tmux "$po_bin"
