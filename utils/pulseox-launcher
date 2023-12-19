@@ -24,7 +24,27 @@ play_warning () {
 	play -q -n -c1 synth sin %-1 sin %-9 sin %-5 sin %-2 sin %-25 sin %-30 fade h 0.01 .5 .2
 }
 
+check_make_lock() {
+  local filename=$1
+  local time_ms=$2
+
+  # Convert milliseconds to a suitable date format (subtract from current date)
+  local datetime="$(date -d "@$(( $(date +%s) - time_ms / 1000 ))")"
+
+  # Create the file if it doesn't exist
+  if [ ! -f "$filename" ]; then
+    touch "$filename"
+    echo "File created successfully."
+  else
+    echo "File already exists."
+  fi
+
+  # Set the modification time
+  touch -d "$datetime" "$filename"
+}
+
 # Try to acquire a lock, exit if cannot
+check_make_lock "$we_ran_tracker_file" 4000
 exec 200<$we_ran_tracker_file
 if ! flock --verbose -n 200; then
 	# Warning sound for those who hold buttons down

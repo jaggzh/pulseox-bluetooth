@@ -1,0 +1,2 @@
+HOME=/home/jag
+* * * * * /usr/bin/find /tmp/pulseox.pid -mmin +2 &>/dev/null || [[ -f /tmp/pulseox.pid ]] && $HOME/bin/pulseox >>$HOME/logs/pulseoxlog
