@@ -1,0 +1,7 @@
+wheel
+pysine
+pyfiglet
+bluepy
+requests
+ipdb
+pulsectl

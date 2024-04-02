@@ -66,7 +66,7 @@ alert_delay_secs = {
         'disco': 5,
         }
 bpm_low=95   # 4 testing
-bpm_low=55
+bpm_low=52
 bpm_high=83  # 4 testing
 bpm_high=120
 o2_low=99    # 4 testing
@@ -189,7 +189,8 @@ def alert_bpm(avg, high=False, test=False):
         # BMP is our default; we don't bother to keep saying "bee pee em "
         # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
         if settings.do_speech:
-            subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
+            # subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
+            subprocess.run(settings.speech_synth_args + [str(int(avg))])
 
 def play_freq(freq, dur=1.0):
     if volpy is not None:
@@ -248,6 +249,8 @@ def handle_alerts():
             ret_alert = 'spo2'
     return ret_alert
 
+dlog = open(settings.raw_dlog_fn, "a")
+
 class MyDelegate(btle.DefaultDelegate):
     def __init__(self):
         btle.DefaultDelegate.__init__(self)
@@ -269,6 +272,7 @@ class MyDelegate(btle.DefaultDelegate):
         #                 0   1 2   3 4 5 6 7
 
         # [10] 254 10 85 0 92 100 7 116 178 76
+        # dlog.write(' '.join([str(i) for i in ints]) + "\n")
 
         if ints[0] == 254 and ints[1] == 8:  # 8-line format
             if args.verbose>1:
@@ -285,6 +289,11 @@ class MyDelegate(btle.DefaultDelegate):
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
                 ovals.show_data(bpm=bpm, spo2=spo2)
+                if settings.do_speech:
+                    if time.time()-settings.last_say > 30:
+                        # subprocess.run(settings.speech_synth_args, input=("" + str(int(bpm))).encode())
+                        subprocess.run(settings.speech_synth_args + [str(int(bpm))])
+                        settings.last_say=time.time()
                 #print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:

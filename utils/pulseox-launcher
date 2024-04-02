@@ -19,6 +19,8 @@ ourname="${ourdir##*/}"
 pbname=pulseox-loop
 pkname=pulseox-kill
 
+tmux_session_name=m
+
 . "$ourdir/fn.bash.filetime_within_ms"
 play_warning () {
 	play -q -n -c1 synth sin %-1 sin %-9 sin %-5 sin %-2 sin %-25 sin %-30 fade h 0.01 .5 .2
@@ -96,19 +98,20 @@ fi
 # Function to run command in tmux session
 run_in_tmux() {
 	local cmd=$1
-	tmux has-session -t m 2>/dev/null || tmux new-session -d -s m
+	exec 200<&-
+	tmux has-session -t "$tmux_session_name" 2>/dev/null || tmux new-session -d -s "$tmux_session_name"
 
 	# Check what is running in the first window
-	pane_info=$(tmux list-panes -t m:0 -F "#{pane_current_command}")
+	pane_info=$(tmux list-panes -t "$tmux_session_name":0 -F "#{pane_current_command}")
 
 	# If only bash is running in the first window
 	if [ "$pane_info" = "bash" ]; then
 		# Send the command to the first window
-		tmux send-keys -t m:0 "$cmd" C-m
+		tmux send-keys -t "$tmux_session_name":0 "$cmd" C-m
 	else
 		# Create a new window and send the command
-		tmux new-window -t m -n 'pulseox'
-		tmux send-keys -t m:pulseox "$cmd" C-m
+		tmux new-window -t "$tmux_session_name" -n 'pulseox'
+		tmux send-keys -t "$tmux_session_name":pulseox "$cmd" C-m
 	fi
 }
 

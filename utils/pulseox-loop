@@ -23,4 +23,6 @@ echo "Executing $po_bin ..."
 # Loop forever in case it errors out and it's not caught
 while true; do
 	"$po_bin"
+	echo "Sleep 2"
+	sleep 2
 done
