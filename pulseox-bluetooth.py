@@ -435,7 +435,7 @@ def bt_connect():
 
     print("Connected!")
     btdev.setDelegate(MyDelegate())
-    # print("Delegate set")
+    print("Delegate set")
 
     # descs=btdev.getDescriptors()
     # for desc in descs:
