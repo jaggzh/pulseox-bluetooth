@@ -131,7 +131,18 @@ def plot(ints):
         colb = get_plot_col('b', ints[ib])
         colc = get_plot_col('c', ints[ic])
         #set_scroll_region_plot()
-        print(f'\033[46m\033[2K\033[;33;1m\033[{cola}C##\033[K\033[;m')
+
+        # Using K codes to 'efficiently' clear the bg color of the plot line:
+        # print(f'\033[46m\033[2K\033[;33;1m\033[{cola}C##\033[K\033[;m')
+
+        # No bg/fill; just cursor position to the peak of the wave:
+        # print(f'\033[46m\033[;33;1m\033[{cola}C##\033[;m')
+
+        # Hard code fill char:
+        # fillch='▎'
+        fillch='▏'
+        print(f'\033[44;31m{fillch*cola}\033[;33;1m##\033[;m')
+
         #gxy(50,30)
         #set_scroll_region_data()
         #print("Yay", sampreducer)

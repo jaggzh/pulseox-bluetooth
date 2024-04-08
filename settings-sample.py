@@ -29,12 +29,15 @@ logfreq=60                   # Seconds: Don't log each reading
 # Speech synthesis for additional alert info
 # (This takes text via stdin)
 speech_synth_args=['/usr/bin/festival', '--tts']
+do_speech=True
+do_speech=False
+last_say=time.time()
 
 # keepalive_dir='/tmp'
 # This is really a heartbeat -- timestamp for monitoring
 # if the process is running
 keepalive_dir='/tmp'
-keepalive_file='/tmp/pulseox.pid'  # Maybe we'll have multiple pulseoxes in the future??
+# Maybe we'll have multiple pulseoxes in the future??
 keepalive_filename='/tmp/pulseox.pid'
 # Update keepalive file every N seconds
 keepalive_spacing_s=5
@@ -43,5 +46,13 @@ alert_volume_start=.42  # THIS IS A FLOAT 0-1.0
 
 # Data format/Model info should eventually be here, if others add
 # more models
+
+alert_delay_secs = {
+        'o2': 5,
+        'bpm': 5,
+        'disco': 5,
+        }
+
+plot_supp_indent=' '*20
 
 # vim: set et

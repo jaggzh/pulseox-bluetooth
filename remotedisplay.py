@@ -110,7 +110,11 @@ def display(
 		bpm=None,
 		spo2=None,
 		verbose=0,
-		alert=False):  # None, 'bpm', 'spo2'
+		alert=False,
+		terminate_signal=None):  # None, 'bpm', 'spo2'
+    # If you do any loops, you should test:
+    #     while not terminate_signal.is_set(): to break out
+    # OTHERWISE our monitor_threads may kill you
 	global last_alert, last_pulseox_strlen
 	#import os
 	#os.system(f"moztts 'Your heart rate is {bpm}'")

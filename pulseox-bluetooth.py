@@ -21,50 +21,35 @@ except:
     print("NOT FOUND: volpy module, or one of its dependencies")
     volpy=None
 
-# import time
-# from pysinewave import SineWave
-# sinewave = SineWave(pitch = 12, pitch_per_second = 10)
-# sinewave.play()
-# time.sleep(2)
-# sinewave.set_pitch(-5)
-# time.sleep(3)
-# import numpy as np
-# for i in np.arange(300, 600, 3):
-#     pysine.sine(frequency=i, duration=.05)
-# sys.exit()
+threadlife_warn_time_s = 6  # seconds
+threadlife_kill_time_s = 9  # seconds
 
-import settings
+import settings as stg
 import flogging
-from bansi import * # Yes, that's right, *. Free colors everywhere!
-#pysine.sine(frequency=440.0, duration=1.0)
+import alerts
+from bansi import * # Color variables. Leave.
 
 ######################################################################3
 ## Configuration variables:
 
-#pomac='BA:03:C4:2C:4D:60'
 alert_bpm_audiofile=""               # not used; only using pysine.sine()
 alert_on_disconnect=False
 alert_on_disconnect=True             # If sensor gives bpm=255, spo2=127
 
 # bpm and o2 alert limits and time average length
-# (At present the plan is: If the avg over this time of data samples
+# (At present If the avg over this time of data samples
 #  exceeds the limits, alert)
 alert_avg_secs = {  # samples averaged over this seconds
         'o2': 5,
         'bpm': 5,
         'disco': 5,
         }
-last_alert = {             # don't change. these track time.
+last_alert = {      # don't change. these track time.
         'o2': 0,
         'bpm': 0,
         'disco': 0,
         }
 
-alert_delay_secs = {
-        'o2': 5,
-        'bpm': 5,
-        'disco': 5,
-        }
 bpm_low=95   # 4 testing
 bpm_low=52
 bpm_high=83  # 4 testing
@@ -79,14 +64,8 @@ alert_bpm_low_freq = 260
 alert_bpm_high_freq = 440
 alert_o2_freq = 540
 alert_disco_freq = 199
-# pysine.sine(frequency=alert_bpm_low_freq, duration=.5)
-# pysine.sine(frequency=alert_bpm_high_freq, duration=.5)
-# pysine.sine(frequency=alert_o2_freq, duration=.5)
-# pysine.sine(frequency=alert_disco_freq, duration=.5)
-# sys.exit()
 
-log_hours=0                 # Could be a lot of data points. We keep each sample
-                            #  currently.
+log_hours=0    # Could be a lot of data points. We keep each sample currently.
 log_mins=log_hours*60
 log_secs=log_mins*60 + 20
 
@@ -115,16 +94,81 @@ if do_plot:
 last_webupd_time=0
 last_keepalive_time=0
 
-if settings.do_web_lcd:
+if stg.do_web_lcd:
     import remotedisplay as display
 
-# Inspired by: BLE IoT Sensor Demo
-# Author: Gary Stafford
-# Reference: https://elinux.org/RPi_Bluetooth_LE
-# Requirements: python3 -m pip install --user -r requirements.txt
-# To Run: python3 ./rasppi_ble_receiver.py d1:aa:89:0c:ee:82 <- MAC address - change me!
+import sys
+import threading
+import time
 
-import sys # for exit()
+thread_tracking = {}
+thread_terminate_signals = {}
+
+def tracked_thread(target, args=(), kwargs=None, life_limit=7):
+    if kwargs is None:
+        kwargs = {}
+    terminate_signal = threading.Event()
+    thread_id = f"{target.__name__}-{time.time()}"  # Ensuring unique ID using timestamp
+    
+    def wrapper():
+        start_time = time.time()
+        thread_tracking[thread_id] = {
+            'start_time': start_time,
+            'thread': threading.current_thread(),  # Store the current thread object
+            'terminate_signal': terminate_signal
+        }
+        
+        kwargs['terminate_signal'] = terminate_signal
+
+        try:
+            target(*args, **kwargs)
+        finally:
+            # Cleanup after thread termination
+            del thread_tracking[thread_id]
+    
+    t = threading.Thread(target=wrapper)
+    t.start()
+
+    return t
+
+import ctypes
+import time
+import threading
+
+thread_warned_times = {}
+
+def _async_raise(tid, exctype):
+    """Raises an exception in the threads with ID tid"""
+    if not isinstance(exctype, type):
+        exctype = type(exctype)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("Invalid thread ID")
+    elif res != 1:
+        # "Undo" the effect if more than one thread was affected, which shouldn't happen
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+
+def force_terminate_thread(thread):
+    """Forcibly terminate a Python thread"""
+    _async_raise(thread.ident, SystemExit)
+
+def monitor_threads():
+    while True:
+        current_time = time.time()
+        for thread_id, info in list(thread_tracking.items()):
+            thread, start_time = info['thread'], info['start_time']
+            if current_time - start_time > threadlife_kill_time_s and thread_id in thread_warned_times:
+                # If the thread was previously warned and has exceeded the kill time
+                print(f"Forcefully terminating thread {thread_id}")
+                force_terminate_thread(thread)
+                del thread_tracking[thread_id]  # Remove from tracking
+            elif current_time - start_time > threadlife_warn_time_s and thread_id not in thread_warned_times:
+                # If the thread exceeds the warn time but hasn't been warned yet
+                print(f"Warning thread {thread_id} to terminate")
+                thread_terminate_signals[thread_id].set()
+                thread_warned_times[thread_id] = current_time  # Mark as warned
+        time.sleep(1)
 
 def diff_strings(a, b):
     import difflib
@@ -176,52 +220,6 @@ def avg_log(log=None, dur=None, prune=True):
         print(f"Average is 0: ", log)
     return avg
 
-def alert_bpm(avg, high=False, test=False):
-    pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
-    #import playsound
-    #playsound.playsound('sample.mp3')
-    freq = alert_bpm_low_freq if not high else alert_bpm_high_freq
-    if time.time()-last_alert['bpm'] > alert_delay_secs['bpm']:
-        if not test:
-            last_alert['bpm']=time.time()
-        if settings.alert_audio:
-            play_freq(freq, dur=1.0)
-        # BMP is our default; we don't bother to keep saying "bee pee em "
-        # subprocess.run(settings.speech_synth_args, input=("bee pee em " + str(int(avg))).encode())
-        if settings.do_speech:
-            # subprocess.run(settings.speech_synth_args, input=("" + str(int(avg))).encode())
-            subprocess.run(settings.speech_synth_args + [str(int(avg))])
-
-def play_freq(freq, dur=1.0):
-    if volpy is not None:
-        print(f"Current volume: {volpy.volget()}")
-        volpy.volsave()
-        volpy.volset(settings.alert_volume_start)
-        print(f"Current volume after set: {volpy.volget()}")
-    pysine.sine(frequency=freq, duration=dur)
-    if volpy is not None:
-        volpy.volrestore()
-
-def alert_o2(avg, test=False):
-    pfp(bred, "WARNING. SpO2 out of range!!! ", avg, rst)
-    if time.time()-last_alert['o2'] > alert_delay_secs['o2']:
-        if not test:
-            last_alert['o2']=time.time()
-        if settings.alert_audio:
-            play_freq(alert_o2_freq)
-        if settings.do_speech:
-            subprocess.run(settings.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
-
-def alert_disco(test=False):
-    pfp(bmag, "WARNING. Disconnected", rst)
-    if time.time()-last_alert['disco'] > alert_delay_secs['disco']:
-        if settings.alert_audio:
-            play_freq(alert_disco_freq)
-        if not test:
-            last_alert['disco']=time.time()
-        if settings.do_speech:
-            subprocess.run(settings.speech_synth_args, input="disconnected".encode())
-
 def handle_alerts():
     ret_alert = None  # Return: None, 'bpm', 'spo2'
     if len(bpm_log) < 5: return None  # Need more data.
@@ -230,7 +228,7 @@ def handle_alerts():
     #print(f"BPMlog: {bpm_log[-1]['val']}  SpO2: {o2_log[-1]['val']}")
     if bpm_log[-1]['val'] == 255 and o2_log[-1]['val'] == 127:
         if alert_on_disconnect:  # User does not desire disconnection alerts
-            alert_disco()
+            alerts.alert_disco(last_alert=last_alert)
         ret_alert = 'disco'
     else:
         bpm_avg = avg_log(log=bpm_log, dur=alert_avg_secs['bpm'])
@@ -240,16 +238,16 @@ def handle_alerts():
             print("   O2 avg:", o2_avg)
         if bpm_avg >= bpm_high:
             ret_alert = 'bpm'
-            alert_bpm(bpm_avg, high=True)
+            alerts.alert_bpm(bpm_avg, high=True, last_alert=last_alert)
         elif bpm_avg <= bpm_low:
             ret_alert = 'bpm'
-            alert_bpm(bpm_avg)
+            alerts.alert_bpm(bpm_avg, last_alert=last_alert)
         elif o2_avg <= o2_low:
-            alert_o2(o2_avg)
+            alerts.alert_o2(o2_avg, last_alert=last_alert)
             ret_alert = 'spo2'
     return ret_alert
 
-dlog = open(settings.raw_dlog_fn, "a")
+dlog = open(stg.raw_dlog_fn, "a")
 
 class MyDelegate(btle.DefaultDelegate):
     def __init__(self):
@@ -276,7 +274,7 @@ class MyDelegate(btle.DefaultDelegate):
 
         if ints[0] == 254 and ints[1] == 8:  # 8-line format
             if args.verbose>1:
-                print(f"  0. Received data. ints={ints}")
+                print(f"{stg.plot_supp_indent}  0. Received data. ints={ints}", end='\r')
             ovals.set_from_ints(ints)
             ovals.plot(ints)
 
@@ -284,16 +282,16 @@ class MyDelegate(btle.DefaultDelegate):
             if len(ints) < 6: 
                 print("Invalid data line (type 'BPM/SpO2'):", data)
             else:
-                print(f"  1. Received data. ints={ints}")
+                print(f"{stg.plot_supp_indent}  1. Received data. ints={ints}", end='\r')
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
                 ovals.show_data(bpm=bpm, spo2=spo2)
-                if settings.do_speech:
-                    if time.time()-settings.last_say > 30:
-                        # subprocess.run(settings.speech_synth_args, input=("" + str(int(bpm))).encode())
-                        subprocess.run(settings.speech_synth_args + [str(int(bpm))])
-                        settings.last_say=time.time()
+                if stg.do_speech:
+                    if time.time()-stg.last_say > 30:
+                        # subprocess.run(stg.speech_synth_args, input=("" + str(int(bpm))).encode())
+                        subprocess.run(stg.speech_synth_args + [str(int(bpm))])
+                        stg.last_say=time.time()
                 #print(f"BPM   : {bpm}  SpO2: {spo2}")
                 alert_type = handle_alerts() # None, 'disconnected', 'bpm', 'spo2'
                 if alert_type is not None:
@@ -306,15 +304,15 @@ class MyDelegate(btle.DefaultDelegate):
                 if alert_type == 'disco':
                     print("  DISCONNECTED!")
                 else:
-                    print(f"  Some alert received. alert_type={alert_type}")
-                    if settings.do_web_lcd and time.time() - last_webupd_time > 3:
-                        display_thread = Thread(
-                                target=display.display,
-                                kwargs={'ip': settings.ip_lcd, 
-                                        'bpm': bpm,
-                                        'spo2': spo2,
-                                        'alert': alert_type})
-                        display_thread.start()
+                    if alert_type is not None:
+                        print(f"{stg.plot_supp_indent}  Some alert received. alert_type={alert_type}", end='\n')
+                    if stg.do_web_lcd and time.time() - last_webupd_time > 3:
+                        tracked_thread(target=display.display, 
+                                       kwargs={'ip': stg.ip_lcd, 
+                                               'bpm': bpm, 
+                                               'spo2': spo2, 
+                                               'alert': alert_type}, 
+                                       life_limit=7)
                         last_webupd_time = time.time()
         elif ints[0] == 254 and ints[1] == 8:
             if len(ints) < 8: 
@@ -346,21 +344,25 @@ class MyDelegate(btle.DefaultDelegate):
 
         update_keepalive()
 
+# wrap display logic
+def update_display(ip, bpm, spo2, alert_type):
+    display.display(ip=ip, bpm=bpm, spo2=spo2, alert=alert_type)
+
 def update_keepalive():
-    # print(f"{bgblu}{bmag}Updating keepalive file: '{yel}{settings.keepalive_filename}{bgblu}{bmag}'{rst}")
+    # print(f"{bgblu}{bmag}Updating keepalive file: '{yel}{stg.keepalive_filename}{bgblu}{bmag}'{rst}")
     global last_keepalive_time
-    if time.time() - last_keepalive_time > settings.keepalive_spacing_s:
+    if time.time() - last_keepalive_time > stg.keepalive_spacing_s:
         print(bgblu, whi, f"  Updating is due, yay!", rst)
         last_keepalive_time = time.time()
         try:
             pid = os.getpid()  # get current process ID
             print(bgblu, whi, f"    We are writing... supposed to...", rst)
-            with open(settings.keepalive_filename, 'w') as file:
+            with open(stg.keepalive_filename, 'w') as file:
                 print(bgblu, whi, f"      We really are...", rst)
                 file.write(str(pid))
         except Exception as e:
             print(f"An error occurred while writing the PID to the keepalive file!")
-            print(f"   File: {settings.keepalive_filename}")
+            print(f"   File: {stg.keepalive_filename}")
             print(f"  Error: {e}")
     # else:
     #     print(bgblu, bred, f"  Not time for update", rst)
@@ -451,21 +453,21 @@ def main():
     args = get_args()
     if args.test_audio:
         print(f"{bcya}BPM high alert:")
-        alert_bpm(140, high=True, test=True)
+        alerts.alert_bpm(140, high=True, test=True, last_alert=last_alert)
         time.sleep(.5)
         print(f"{bcya}BPM low alert:")
-        alert_bpm(40, high=False, test=True)
+        alerts.alert_bpm(40, high=False, test=True, last_alert=last_alert)
         time.sleep(.5)
         print(f"{bcya}O2 low alert:")
-        alert_o2(80, test=True)
+        alerts.alert_o2(80, test=True, last_alert=last_alert)
         time.sleep(.5)
         print(f"{bcya}Disconnect alert:")
-        alert_disco(test=True)
+        alerts.alert_disco(test=True, last_alert=last_alert)
         time.sleep(.5)
         sys.exit()
 
     # Clear the screen probably
-    if settings.do_web_lcd: display.init(ip=settings.ip_lcd)
+    if stg.do_web_lcd: display.init(ip=stg.ip_lcd)
 
     flogging.setup_log()
     ovals.setup()
@@ -474,7 +476,7 @@ def main():
 
     print("Using bluetooth device MAC address:", final_mac)
     bt_connect()
-    if settings.do_web_lcd:
+    if stg.do_web_lcd:
         if not args.noclear:
             display.initial_clear()
 
@@ -549,7 +551,7 @@ def get_args():
     arg_parser = ArgumentParser(description="BLE Pulse Oximeter Monitor")
     arg_parser.add_argument(
         '-a', '--mac_address', help="MAC address of PulseOx device (regex)",
-        default=settings.pomac)
+        default=stg.pomac)
     arg_parser.add_argument(
         '-v', '--verbose', help="Increase verbosity", action='count', default=0)
     arg_parser.add_argument(
@@ -561,95 +563,9 @@ def get_args():
     args = arg_parser.parse_args()
     return args
 
-# [8] 254 8 86 17 0 3 222 80
-# [8] 254 8 86 17 0 3 223 81
-# [8] 254 8 86 18 0 3 224 83
-# [8] 254 8 86 21 0 3 225 87
-# [8] 254 8 86 26 0 4 226 94
-# [8] 254 8 86 34 0 5 227 104
-# [8] 254 8 86 44 0 7 228 117
-# [8] 254 8 86 54 0 8 229 129
-# [8] 254 8 86 63 0 9 230 140
-# [8] 254 8 86 71 0 11 231 151
-# [8] 254 8 86 75 0 11 232 156
-# [8] 254 8 86 77 0 12 233 160
-# [8] 254 8 86 77 0 12 234 161
-# [8] 254 8 86 74 0 11 235 158
-# [8] 254 8 86 70 0 11 236 155
-# [10] 254 10 85 0 73 98 7 84 230 75
-# [8] 254 8 86 65 0 10 237 150
-# [8] 254 8 86 60 0 9 238 145
-# [8] 254 8 86 55 0 8 239 140
-# [8] 254 8 86 50 0 8 240 136
-# [8] 254 8 86 46 0 7 241 132
-# [8] 254 8 86 43 0 6 242 129
-# [8] 254 8 86 40 0 6 243 127
-# [8] 254 8 86 38 0 6 244 126
-# [8] 254 8 86 37 0 6 245 126
-# [8] 254 8 86 37 0 6 246 127
-# [8] 254 8 86 36 0 5 247 126
-# [8] 254 8 86 36 0 5 248 127
-# ...
-# [8] 254 8 86 35 0 5 37 171
-# [8] 254 8 86 35 0 5 38 172
-# [8] 254 8 86 34 0 5 39 172
-# [8] 254 8 86 33 0 5 40 172
-# [10] 254 10 85 0 74 98 6 199 52 12
-# [8] 254 8 86 32 0 5 41 172
-# [8] 254 8 86 31 0 5 42 172
-# [8] 254 8 86 31 0 5 43 173
-# [8] 254 8 86 30 0 5 44 173
-# [8] 254 8 86 30 0 5 45 174
-# [8] 254 8 86 31 0 5 46 176
-# [8] 254 8 86 33 0 5 47 179
-# [8] 254 8 86 36 0 5 48 183
-# [8] 254 8 86 40 0 6 49 189
-# [8] 254 8 86 46 0 7 50 197
-# [8] 254 8 86 52 0 8 51 205
-# [8] 254 8 86 57 0 9 52 212
-# [16] 254 8 86 61 0 9 53 217 254 8 86 64 0 10 54 222
-# [8] 254 8 86 65 0 10 55 224
-# [8] 254 8 86 64 0 10 56 224
-# [8] 254 8 86 63 0 9 57 223
-# [8] 254 8 86 60 0 9 58 221
-# [8] 254 8 86 57 0 9 59 219
-# [8] 254 8 86 54 0 8 60 216
-# [8] 254 8 86 51 0 8 61 214
-# [8] 254 8 86 48 0 7 62 211
-# [8] 254 8 86 46 0 7 63 210
-# [8] 254 8 86 44 0 7 64 209
-# [8] 254 8 86 42 0 6 65 207
-# [8] 254 8 86 41 0 6 66 207
-
-# 10-lines format: 254 10 85 0 <BPM> <SPO2> 6 ? ? ?
-#  8-lines format: {254 8 86} ? 0 ? ? ?
-# [10] 254 10 85 0 72 97 6 167 44 225
-# [10] 254 10 85 0 72 98 6 98 45 158
-# [10] 254 10 85 0 72 98 6 7 46 68
-# [10] 254 10 85 0 72 98 6 57 47 119
-# [10] 254 10 85 0 72 98 6 87 48 150
-# [10] 254 10 85 0 72 98 6 87 49 151
-# [10] 254 10 85 0 72 98 6 87 50 152
-# [10] 254 10 85 0 74 98 6 115 51 183
-# [10] 254 10 85 0 74 98 6 199 52 12
-# [10] 254 10 85 0 74 98 6 199 53 13
-# [10] 254 10 85 0 74 98 6 183 54 254
-# [10] 254 10 85 0 75 98 6 181 55 254
-# [10] 254 10 85 0 75 98 6 109 56 183
-# [10] 254 10 85 0 78 98 6 109 57 187
-# [10] 254 10 85 0 78 98 6 59 58 138
-# [10] 254 10 85 0 84 97 6 37 59 122
-# [10] 254 10 85 0 84 97 6 13 60 99
-# [10] 254 10 85 0 89 98 6 36 61 129
-# [10] 254 10 85 0 89 98 6 36 62 130
-# [10] 254 10 85 0 90 97 6 36 63 131
-# [10] 254 10 85 0 90 97 6 36 64 132
-# [10] 254 10 85 0 90 97 6 45 65 142
-# [10] 254 10 85 0 90 97 6 60 66 158
-# [10] 254 10 85 0 87 97 6 60 67 156
-# [10] 254 10 85 0 87 97 6 39 68 136
-
 if __name__ == "__main__":
+    monitor_thread = threading.Thread(target=monitor_threads)
+    monitor_thread.start()
     main()
 
 # vim: et
