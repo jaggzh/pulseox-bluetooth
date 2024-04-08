@@ -9,7 +9,6 @@
 # https://www.amazon.com/gp/product/B087Q724QM/
 
 #import playsound  # Not using right now
-import pysine      # Used for playing an alert tone
 import sys
 import ovals       # Other values from pulseox (like SpO2 trace)
 from threading import Thread
@@ -59,11 +58,6 @@ o2_low=88
 # Internal logs
 bpm_log=[]  # []['time','val']
 o2_log=[]
-
-alert_bpm_low_freq = 260
-alert_bpm_high_freq = 440
-alert_o2_freq = 540
-alert_disco_freq = 199
 
 log_hours=0    # Could be a lot of data points. We keep each sample currently.
 log_mins=log_hours*60

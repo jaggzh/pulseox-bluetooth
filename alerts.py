@@ -1,5 +1,8 @@
 import settings as stg
 import volpy
+from bansi import *
+import time
+import pysine      # Used for playing an alert tone
 
 def alert_bpm(avg, high=False, test=False, last_alert=None):
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
@@ -23,7 +26,7 @@ def alert_o2(avg, test=False, last_alert=None):
         if not test:
             last_alert['o2']=time.time()
         if stg.alert_audio:
-            play_freq(alert_o2_freq)
+            play_freq(stg.alert_o2_freq)
         if stg.do_speech:
             subprocess.run(stg.speech_synth_args, input=("oxygen " + str(int(avg))).encode())
 
