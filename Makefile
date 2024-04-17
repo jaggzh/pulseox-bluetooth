@@ -1,6 +1,7 @@
 scriptname=pulseox-bluetooth.py
 editfiles=Makefile \
 		  $(scriptname) \
+		  remotedisplay.py \
 		  settings.py \
 		  alerts.py \
 		  utils.py \
@@ -9,7 +10,6 @@ editfiles=Makefile \
 		  flogging.py \
 		  usercallbacks.py \
 		  usercallbacks-example.py \
-		  remotedisplay.py \
 		  bansi.py \
 		  settings-sample.py README.md
 

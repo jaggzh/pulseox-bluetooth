@@ -462,6 +462,7 @@ def main():
 
     # Clear the screen probably
     if stg.do_web_lcd: display.init(ip=stg.ip_lcd)
+    # if stg.do_web_lcd: display.init(ip=stg.ip_lcd, error=True)
 
     flogging.setup_log()
     ovals.setup()

@@ -9,8 +9,10 @@ try: import usercallbacks
 except: pass
 
 lcd_ip=None # Assigned at init()
+asser=False # try to raise exceptions in errors
 initial_clear_done=False
-verbose=0
+verbose=2
+timeout=2
 
 boxw=312
 boxh=79
@@ -87,7 +89,9 @@ def textbox(rad=0,
 
 def init(ip=None, error=False):
 	global lcd_ip
+	global asser
 	lcd_ip=ip
+	asser = error
 	#    ip: IP address of LCD display
 	# error: default False: don't crash if the request fails
 	#                 True: crash on web failure (raise exception)
@@ -96,12 +100,15 @@ def init(ip=None, error=False):
 
 def initial_clear():
 	global initial_clear_done
+	if verbose>1: print(f"INITIAL LCD CLEAR..")
 	if not initial_clear_done:
 		try:
 			s = f"http://{lcd_ip}/cs?cls=r=0"
-			r = requests.get(s)
+			if verbose>1: print("Request:", s)
+			r = requests.get(s, timeout=timeout)
+			if verbose>1: print("/Request")
 		except:
-			if error: raise
+			if asser: raise
 			pass
 		initial_clear_done = True
 
@@ -208,7 +215,8 @@ def display(
 		except: pass
 	if verbose>1: print("Request:", s)
 	# Here is the actual web hit to the LCD
-	r = requests.get(s)
+	r = requests.get(s, timeout=timeout)
+	if verbose>1: print("/Request")
 	# When not alerting, call an optional user-callback
 	if not alert_border:
 		try: usercallbacks.post_display_normal()
