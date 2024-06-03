@@ -4,6 +4,7 @@ import ipdb
 import sys
 import os
 from bansi import * # Yes, that's right, *. Free colors everywhere!
+from alerts import *
 
 try: import usercallbacks
 except: pass
@@ -11,8 +12,8 @@ except: pass
 lcd_ip=None # Assigned at init()
 asser=False # try to raise exceptions in errors
 initial_clear_done=False
-verbose=2
-timeout=2
+verbose=0
+timeout=4
 
 boxw=312
 boxh=79
@@ -106,6 +107,7 @@ def initial_clear():
 			s = f"http://{lcd_ip}/cs?cls=r=0"
 			if verbose>1: print("Request:", s)
 			r = requests.get(s, timeout=timeout)
+
 			if verbose>1: print("/Request")
 		except:
 			if asser: raise
@@ -119,9 +121,9 @@ def display(
 		verbose=0,
 		alert=False,
 		terminate_signal=None):  # None, 'bpm', 'spo2'
-    # If you do any loops, you should test:
-    #     while not terminate_signal.is_set(): to break out
-    # OTHERWISE our monitor_threads may kill you
+	# If you do any loops, you should test:
+	#     while not terminate_signal.is_set(): to break out
+	# OTHERWISE our monitor_threads may kill you
 	global last_alert, last_pulseox_strlen
 	#import os
 	#os.system(f"moztts 'Your heart rate is {bpm}'")
@@ -215,7 +217,11 @@ def display(
 		except: pass
 	if verbose>1: print("Request:", s)
 	# Here is the actual web hit to the LCD
-	r = requests.get(s, timeout=timeout)
+	try:
+		r = requests.get(s, timeout=timeout)
+	except Exception as e:
+		alert_lcd()
+		raise(e)
 	if verbose>1: print("/Request")
 	# When not alerting, call an optional user-callback
 	if not alert_border:

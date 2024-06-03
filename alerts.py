@@ -4,6 +4,15 @@ from bansi import *
 import time
 import pysine      # Used for playing an alert tone
 
+last_alert_lcd_time = time.time()
+
+def alert_lcd():
+    global last_alert_lcd_time
+    if time.time()-last_alert_lcd_time > 60*5:
+        print(f"{bred}LCD Error does not make noise{rst}")
+        play_freq(stg.lcd_error_freq, dur=.1)
+        last_alert_lcd_time = time.time()
+
 def alert_bpm(avg, high=False, test=False, last_alert=None):
     pfp(bred, "WARNING. BPM out of range!!! ", avg, rst)
     #import playsound

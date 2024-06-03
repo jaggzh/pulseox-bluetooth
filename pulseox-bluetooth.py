@@ -276,7 +276,8 @@ class MyDelegate(btle.DefaultDelegate):
             if len(ints) < 6: 
                 print("Invalid data line (type 'BPM/SpO2'):", data)
             else:
-                print(f"{stg.plot_supp_indent}  1. Received data. ints={ints}", end='\r')
+                if args.verbose>1:
+                    print(f"{stg.plot_supp_indent}  1. Received data. ints={ints}", end='\r')
                 bpm, spo2 = ints[4], ints[5]
                 bpm_log.append({'time': time.time(), 'val':bpm})
                 o2_log.append({'time': time.time(), 'val':spo2})
@@ -312,7 +313,8 @@ class MyDelegate(btle.DefaultDelegate):
             if len(ints) < 8: 
                 print("Invalid data line (type 'extra data'):", data)
             else:
-                print(f"  2. Received data. ints={ints}")
+                if args.verbose>1:
+                    print(f"  2. Received data. ints={ints}")
                 q,r,s,t = ints[3], ints[5], ints[6], ints[7]
                 yvs[0].append(q)
                 yvs[1].append(r)
@@ -346,13 +348,16 @@ def update_keepalive():
     # print(f"{bgblu}{bmag}Updating keepalive file: '{yel}{stg.keepalive_filename}{bgblu}{bmag}'{rst}")
     global last_keepalive_time
     if time.time() - last_keepalive_time > stg.keepalive_spacing_s:
-        print(bgblu, whi, f"  Updating is due, yay!", rst)
+        if args.verbose>1:
+            print(bgblu, whi, f"  Updating is due, yay!", rst)
         last_keepalive_time = time.time()
         try:
             pid = os.getpid()  # get current process ID
-            print(bgblu, whi, f"    We are writing... supposed to...", rst)
+            if args.verbose>1:
+                print(bgblu, whi, f"    We are writing... supposed to...", rst)
             with open(stg.keepalive_filename, 'w') as file:
-                print(bgblu, whi, f"      We really are...", rst)
+                if args.verbose>1:
+                    print(bgblu, whi, f"      We really are...", rst)
                 file.write(str(pid))
         except Exception as e:
             print(f"An error occurred while writing the PID to the keepalive file!")
@@ -458,6 +463,7 @@ def main():
         print(f"{bcya}Disconnect alert:")
         alerts.alert_disco(test=True, last_alert=last_alert)
         time.sleep(.5)
+        print("Exiting")
         sys.exit()
 
     # Clear the screen probably
@@ -560,6 +566,7 @@ def get_args():
 
 if __name__ == "__main__":
     monitor_thread = threading.Thread(target=monitor_threads)
+    monitor_thread.daemon = True
     monitor_thread.start()
     main()
 

@@ -3,6 +3,8 @@ import os # get_terminal_size
 import sys
 from bansi import *
 import signal # SIGWINCH
+import settings as stg
+import time
 
 def resize_handler(signum, frame):
     global cols,rows
@@ -15,6 +17,9 @@ def resize_handler(signum, frame):
 # Settings
 widthperc = .25   # How much of screen to take up, left-right, with the SpO2 trace
 show_every_n_samples = 3  # Maintained by sampctr
+show_every_n_samples = 1  # Maintained by sampctr
+show_every_n_samples = 2  # Maintained by sampctr
+audio_every_n_samples = 4  # Maintained by sampctr
 
 # More for internal use
 ovals=dict()
@@ -121,12 +126,38 @@ def gbottomleft():
     if not have_term: return
     gxy(1,rows)
 
+auplot_buf=[]
+def audio_plot(val):
+    global auplot_buf
+    auplot_buf = auplot_buf[1:]
+    auplot_buf.append(val)
+    if (sampctr % audio_every_n_samples) == 0:
+        pass
+    pass
+
+lastplot_time = time.time()
+target_bpm = 90
+secs_between_target_beats = 1/(target_bpm / 60)
+# (beats/min) / (seconds/min) = beats/second
+
 def plot(ints):
     global sampctr
-    if not have_term: return
+    global lastplot_time
     sampctr += 1
+    if stg.audio_plot:
+        audio_plot(ints[ia])
+
+    if time.time() - lastplot_time > secs_between_target_beats:
+        pfpl(rst)
+        print("=" * (cols-8), end=' ')
+        print(f'{yel}{target_bpm}{rst}', end=' ')
+        print("=" * 4, end='\r')
+        lastplot_time = time.time()
+
+    if not have_term: return
     if (sampctr % show_every_n_samples) == 0:
         sampreducer = 0
+
         cola = get_plot_col('a', ints[ia])
         colb = get_plot_col('b', ints[ib])
         colc = get_plot_col('c', ints[ic])
