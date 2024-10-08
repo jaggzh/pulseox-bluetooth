@@ -50,7 +50,7 @@ last_alert = {      # don't change. these track time.
         }
 
 bpm_low=95   # 4 testing
-bpm_low=52
+bpm_low=50
 bpm_high=83  # 4 testing
 bpm_high=120
 o2_low=99    # 4 testing
